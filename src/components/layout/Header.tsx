@@ -1,9 +1,38 @@
-import { Search, Phone, Heart, ShoppingCart, User, Menu, ChevronDown } from "lucide-react";
+import { Search, Phone, Heart, ShoppingCart, User, Menu, ChevronDown, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+
+const categories = [
+  { name: "K-Beauty", slug: "k-beauty", icon: "🇰🇷" },
+  { name: "J-Beauty", slug: "j-beauty", icon: "🇯🇵" },
+  { name: "Skincare", slug: "skincare", icon: "✨" },
+  { name: "Makeup", slug: "makeup", icon: "💄" },
+  { name: "Sunscreen", slug: "sunscreen", icon: "☀️" },
+  { name: "Serums & Essences", slug: "serums", icon: "💧" },
+  { name: "Moisturizers", slug: "moisturizers", icon: "🧴" },
+  { name: "Cleansers", slug: "cleansers", icon: "🫧" },
+  { name: "Toners", slug: "toners", icon: "💦" },
+  { name: "Sheet Masks", slug: "masks", icon: "🎭" },
+  { name: "Lip Care", slug: "lip-care", icon: "👄" },
+  { name: "Body Care", slug: "body-care", icon: "🛁" },
+];
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
+  const categoryRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className="w-full">
@@ -71,7 +100,11 @@ const Header = () => {
                 className="md:hidden p-2"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
-                <Menu className="h-6 w-6 text-foreground" />
+                {isMenuOpen ? (
+                  <X className="h-6 w-6 text-foreground" />
+                ) : (
+                  <Menu className="h-6 w-6 text-foreground" />
+                )}
               </button>
             </div>
           </div>
@@ -93,10 +126,35 @@ const Header = () => {
         <nav className="hidden md:block border-t border-border">
           <div className="container-custom">
             <div className="flex items-center justify-between py-3">
-              <button className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium">
-                Browse Categories
-                <ChevronDown className="h-4 w-4" />
-              </button>
+              {/* Categories Dropdown */}
+              <div className="relative" ref={categoryRef}>
+                <button
+                  onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                  className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium"
+                >
+                  Browse Categories
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isCategoryOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {isCategoryOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-64 bg-background border border-border rounded-xl shadow-lg z-50 overflow-hidden animate-fade-in">
+                    <div className="py-2">
+                      {categories.map((category) => (
+                        <Link
+                          key={category.slug}
+                          to={`/shop?category=${category.slug}`}
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/50 transition-colors"
+                          onClick={() => setIsCategoryOpen(false)}
+                        >
+                          <span className="text-lg">{category.icon}</span>
+                          <span className="text-sm font-medium text-foreground">{category.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="flex items-center gap-8">
                 <Link to="/" className="nav-link">Home</Link>
@@ -113,9 +171,39 @@ const Header = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-border animate-fade-in">
-            <div className="container-custom py-4 space-y-3">
+            <div className="container-custom py-4 space-y-1">
               <Link to="/" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>Home</Link>
               <Link to="/shop" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>Shop</Link>
+              
+              {/* Mobile Categories */}
+              <div>
+                <button
+                  onClick={() => setIsMobileCategoryOpen(!isMobileCategoryOpen)}
+                  className="flex items-center justify-between w-full py-2 nav-link"
+                >
+                  <span>Categories</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isMobileCategoryOpen ? "rotate-180" : ""}`} />
+                </button>
+                {isMobileCategoryOpen && (
+                  <div className="pl-4 space-y-1 animate-fade-in">
+                    {categories.map((category) => (
+                      <Link
+                        key={category.slug}
+                        to={`/shop?category=${category.slug}`}
+                        className="flex items-center gap-2 py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setIsMobileCategoryOpen(false);
+                        }}
+                      >
+                        <span>{category.icon}</span>
+                        <span>{category.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Link to="/about" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>About</Link>
               <Link to="/contact" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>Contact</Link>
               <Link to="/cart" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>Cart</Link>
