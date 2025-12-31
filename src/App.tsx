@@ -8,6 +8,13 @@ import Shop from "./pages/Shop";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import Dashboard from "./pages/account/Dashboard";
+import MyOrders from "./pages/account/MyOrders";
+import AccountDetails from "./pages/account/AccountDetails";
+import VerifyProduct from "./pages/account/VerifyProduct";
+import MyCoupons from "./pages/account/MyCoupons";
+import MyWishlist from "./pages/account/MyWishlist";
+import MyRewards from "./pages/account/MyRewards";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +31,13 @@ const App = () => (
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/account" element={<Dashboard />} />
+          <Route path="/account/orders" element={<MyOrders />} />
+          <Route path="/account/details" element={<AccountDetails />} />
+          <Route path="/account/verify" element={<VerifyProduct />} />
+          <Route path="/account/coupons" element={<MyCoupons />} />
+          <Route path="/account/wishlist" element={<MyWishlist />} />
+          <Route path="/account/rewards" element={<MyRewards />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
