@@ -32,12 +32,25 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Kirei</h3>
             <ul className="space-y-2 text-sm text-background/70">
-              <li><Link to="#" className="hover:text-primary transition-colors">Testimonials</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-colors">Responsible Disclosure</Link></li>
+              <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
+              <li><Link to="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
+              <li><Link to="/shop" className="hover:text-primary transition-colors">Shop</Link></li>
+              <li><Link to="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
               <li><Link to="#" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
               <li><Link to="#" className="hover:text-primary transition-colors">Terms & Conditions</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-colors">Blogs</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-colors">About Us</Link></li>
+            </ul>
+          </div>
+
+          {/* My Account */}
+          <div>
+            <h3 className="font-semibold text-lg mb-4">My Account</h3>
+            <ul className="space-y-2 text-sm text-background/70">
+              <li><Link to="/account" className="hover:text-primary transition-colors">Dashboard</Link></li>
+              <li><Link to="/account/orders" className="hover:text-primary transition-colors">My Orders</Link></li>
+              <li><Link to="/account/wishlist" className="hover:text-primary transition-colors">My Wishlist</Link></li>
+              <li><Link to="/account/coupons" className="hover:text-primary transition-colors">My Coupons</Link></li>
+              <li><Link to="/account/rewards" className="hover:text-primary transition-colors">My Rewards</Link></li>
+              <li><Link to="/cart" className="hover:text-primary transition-colors">Shopping Cart</Link></li>
             </ul>
           </div>
 
@@ -45,23 +58,11 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Customer Service</h3>
             <ul className="space-y-2 text-sm text-background/70">
-              <li><Link to="#" className="hover:text-primary transition-colors">Frequently Asked Questions</Link></li>
+              <li><Link to="/faq" className="hover:text-primary transition-colors">Frequently Asked Questions</Link></li>
+              <li><Link to="/account/verify" className="hover:text-primary transition-colors">Verify Product</Link></li>
               <li><Link to="#" className="hover:text-primary transition-colors">Shipping & Delivery</Link></li>
               <li><Link to="#" className="hover:text-primary transition-colors">Returns & Refunds</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-colors">AI Suggestion</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-colors">Group Shopping</Link></li>
-            </ul>
-          </div>
-
-          {/* More Information */}
-          <div>
-            <h3 className="font-semibold text-lg mb-4">More Information</h3>
-            <ul className="space-y-2 text-sm text-background/70">
-              <li><Link to="#" className="hover:text-primary transition-colors">Beauty Tips</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-colors">Kirei Tube</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-colors">Product Expiry</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-colors">Kirei Community</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-colors">Ask The Expert</Link></li>
+              <li><Link to="/contact" className="hover:text-primary transition-colors">Support</Link></li>
             </ul>
           </div>
         </div>

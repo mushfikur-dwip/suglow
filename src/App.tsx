@@ -10,6 +10,9 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
+import Contact from "./pages/Contact";
+import About from "./pages/About";
+import FAQ from "./pages/FAQ";
 import Dashboard from "./pages/account/Dashboard";
 import MyOrders from "./pages/account/MyOrders";
 import AccountDetails from "./pages/account/AccountDetails";
@@ -35,6 +38,9 @@ const App = () => (
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="/account" element={<Dashboard />} />
           <Route path="/account/orders" element={<MyOrders />} />
           <Route path="/account/details" element={<AccountDetails />} />

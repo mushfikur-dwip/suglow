@@ -52,18 +52,18 @@ const Header = () => {
 
               {/* Action Icons */}
               <div className="flex items-center gap-3">
-                <button className="p-2 hover:bg-secondary rounded-full transition-colors">
+                <Link to="/account/wishlist" className="p-2 hover:bg-secondary rounded-full transition-colors">
                   <Heart className="h-5 w-5 text-foreground" />
-                </button>
-                <button className="p-2 hover:bg-secondary rounded-full transition-colors relative">
+                </Link>
+                <Link to="/cart" className="p-2 hover:bg-secondary rounded-full transition-colors relative">
                   <ShoppingCart className="h-5 w-5 text-foreground" />
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
                     0
                   </span>
-                </button>
-                <button className="p-2 hover:bg-secondary rounded-full transition-colors">
+                </Link>
+                <Link to="/account" className="p-2 hover:bg-secondary rounded-full transition-colors">
                   <User className="h-5 w-5 text-foreground" />
-                </button>
+                </Link>
               </div>
 
               {/* Mobile Menu Button */}
@@ -101,8 +101,8 @@ const Header = () => {
               <div className="flex items-center gap-8">
                 <Link to="/" className="nav-link">Home</Link>
                 <Link to="/shop" className="nav-link">Shop</Link>
-                <Link to="/shop" className="nav-link">Blogs</Link>
-                <Link to="/shop" className="nav-link">Contact</Link>
+                <Link to="/about" className="nav-link">About</Link>
+                <Link to="/contact" className="nav-link">Contact</Link>
               </div>
 
               <div className="w-40" /> {/* Spacer */}
@@ -114,10 +114,13 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden border-t border-border animate-fade-in">
             <div className="container-custom py-4 space-y-3">
-              <Link to="/" className="block py-2 nav-link">Home</Link>
-              <Link to="/shop" className="block py-2 nav-link">Shop</Link>
-              <Link to="/shop" className="block py-2 nav-link">Blogs</Link>
-              <Link to="/shop" className="block py-2 nav-link">Contact</Link>
+              <Link to="/" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>Home</Link>
+              <Link to="/shop" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>Shop</Link>
+              <Link to="/about" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>About</Link>
+              <Link to="/contact" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>Contact</Link>
+              <Link to="/cart" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>Cart</Link>
+              <Link to="/account" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>My Account</Link>
+              <Link to="/auth" className="block py-2 nav-link" onClick={() => setIsMenuOpen(false)}>Login / Register</Link>
             </div>
           </div>
         )}
