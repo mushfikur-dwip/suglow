@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
+import ProtectedAdminRoute from "@/components/admin/ProtectedAdminRoute";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import ProductDetails from "./pages/ProductDetails";
@@ -42,47 +44,49 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/account" element={<Dashboard />} />
-          <Route path="/account/orders" element={<MyOrders />} />
-          <Route path="/account/details" element={<AccountDetails />} />
-          <Route path="/account/verify" element={<VerifyProduct />} />
-          <Route path="/account/coupons" element={<MyCoupons />} />
-          <Route path="/account/wishlist" element={<MyWishlist />} />
-          <Route path="/account/rewards" element={<MyRewards />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/products" element={<AdminProducts />} />
-          <Route path="/admin/orders" element={<AdminOnlineOrders />} />
-          <Route path="/admin/customers" element={<AdminCustomers />} />
-          <Route path="/admin/coupons" element={<AdminCoupons />} />
-          <Route path="/admin/stock" element={<AdminStock />} />
-          <Route path="/admin/settings" element={<AdminSettings />} />
-          <Route path="/admin/pos" element={<AdminPOS />} />
-          <Route path="/admin/reviews" element={<AdminReviews />} />
-          <Route path="/admin/promotions" element={<AdminPromotions />} />
-          <Route path="/admin/purchase" element={<AdminPurchase />} />
-          <Route path="/admin/damages" element={<AdminDamages />} />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AdminAuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/account" element={<Dashboard />} />
+            <Route path="/account/orders" element={<MyOrders />} />
+            <Route path="/account/details" element={<AccountDetails />} />
+            <Route path="/account/verify" element={<VerifyProduct />} />
+            <Route path="/account/coupons" element={<MyCoupons />} />
+            <Route path="/account/wishlist" element={<MyWishlist />} />
+            <Route path="/account/rewards" element={<MyRewards />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+            <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProducts /></ProtectedAdminRoute>} />
+            <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOnlineOrders /></ProtectedAdminRoute>} />
+            <Route path="/admin/customers" element={<ProtectedAdminRoute><AdminCustomers /></ProtectedAdminRoute>} />
+            <Route path="/admin/coupons" element={<ProtectedAdminRoute><AdminCoupons /></ProtectedAdminRoute>} />
+            <Route path="/admin/stock" element={<ProtectedAdminRoute><AdminStock /></ProtectedAdminRoute>} />
+            <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+            <Route path="/admin/pos" element={<ProtectedAdminRoute><AdminPOS /></ProtectedAdminRoute>} />
+            <Route path="/admin/reviews" element={<ProtectedAdminRoute><AdminReviews /></ProtectedAdminRoute>} />
+            <Route path="/admin/promotions" element={<ProtectedAdminRoute><AdminPromotions /></ProtectedAdminRoute>} />
+            <Route path="/admin/purchase" element={<ProtectedAdminRoute><AdminPurchase /></ProtectedAdminRoute>} />
+            <Route path="/admin/damages" element={<ProtectedAdminRoute><AdminDamages /></ProtectedAdminRoute>} />
+            
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AdminAuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -9,12 +9,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface AdminHeaderProps {
   onMenuToggle: () => void;
 }
 
 const AdminHeader = ({ onMenuToggle }: AdminHeaderProps) => {
+  const { user, logout } = useAdminAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    toast.success("Logged out successfully");
+    navigate("/admin/login");
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
   return (
     <header className="h-16 bg-background border-b border-border flex items-center justify-between px-4 lg:px-6">
       {/* Left side */}
@@ -90,11 +110,13 @@ const AdminHeader = ({ onMenuToggle }: AdminHeaderProps) => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 px-2">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-semibold text-sm">JD</span>
+                <span className="text-primary font-semibold text-sm">
+                  {user ? getInitials(user.name) : "AD"}
+                </span>
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-sm font-medium">John Doe</p>
-                <p className="text-xs text-muted-foreground">Admin</p>
+                <p className="text-sm font-medium">{user?.name || "Admin"}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user?.role || "Admin"}</p>
               </div>
             </Button>
           </DropdownMenuTrigger>
@@ -104,7 +126,10 @@ const AdminHeader = ({ onMenuToggle }: AdminHeaderProps) => {
             <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-destructive">
+            <DropdownMenuItem 
+              className="cursor-pointer text-destructive"
+              onClick={handleLogout}
+            >
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
