@@ -1,48 +1,81 @@
 import { Copy, Ticket } from "lucide-react";
 import AccountLayout from "@/components/account/AccountLayout";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
-const mockCoupons = [
+// Available coupons (same as Cart page)
+const availableCoupons = [
   {
     id: 1,
-    code: "WELCOME10",
-    discount: "10% OFF",
-    minPurchase: 500,
-    validUntil: "Jan 31, 2025",
+    code: "JB15",
+    discount: "15% OFF",
+    discountValue: 15,
+    type: "percentage",
+    minPurchase: 1000,
+    validUntil: "Feb 28, 2026",
     isActive: true,
+    description: "15% off on J-Beauty products"
   },
   {
     id: 2,
-    code: "BEAUTY20",
-    discount: "20% OFF",
-    minPurchase: 1000,
-    validUntil: "Feb 15, 2025",
+    code: "KB10",
+    discount: "10% OFF",
+    discountValue: 10,
+    type: "percentage",
+    minPurchase: 500,
+    validUntil: "Feb 28, 2026",
     isActive: true,
+    description: "10% off on K-Beauty products"
   },
   {
     id: 3,
+    code: "SAVE100",
+    discount: "৳100 OFF",
+    discountValue: 100,
+    type: "fixed",
+    minPurchase: 2000,
+    validUntil: "Mar 31, 2026",
+    isActive: true,
+    description: "Flat ৳100 off on orders above ৳2000"
+  },
+  {
+    id: 4,
+    code: "SAVE200",
+    discount: "৳200 OFF",
+    discountValue: 200,
+    type: "fixed",
+    minPurchase: 3000,
+    validUntil: "Mar 31, 2026",
+    isActive: true,
+    description: "Flat ৳200 off on orders above ৳3000"
+  },
+  {
+    id: 5,
     code: "FREESHIP",
     discount: "Free Shipping",
+    discountValue: 0,
+    type: "shipping",
     minPurchase: 0,
-    validUntil: "Dec 15, 2024",
+    validUntil: "Dec 31, 2025",
     isActive: false,
+    description: "Free shipping on all orders (Expired)"
   },
 ];
 
 const MyCoupons = () => {
-  const { toast } = useToast();
-
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast({
-      title: "Coupon copied!",
-      description: `${code} has been copied to clipboard.`,
-    });
+    toast.success(`Coupon ${code} copied to clipboard!`);
   };
 
   return (
     <AccountLayout title="My Coupons" breadcrumb="My Coupons">
-      {mockCoupons.length === 0 ? (
+      <div className="mb-6">
+        <p className="text-sm text-muted-foreground">
+          Use these coupons during checkout to get amazing discounts!
+        </p>
+      </div>
+      
+      {availableCoupons.length === 0 ? (
         <div className="text-center py-12">
           <Ticket className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
           <h2 className="text-lg font-medium text-foreground mb-2">
@@ -54,7 +87,7 @@ const MyCoupons = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {mockCoupons.map((coupon) => (
+          {availableCoupons.map((coupon) => (
             <div
               key={coupon.id}
               className={`relative border rounded-xl p-5 ${
@@ -87,12 +120,13 @@ const MyCoupons = () => {
                   </button>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {coupon.minPurchase > 0
-                  ? `Min. purchase ৳${coupon.minPurchase}`
-                  : "No minimum purchase"}
-                {" • "}Valid until {coupon.validUntil}
+              <p className="text-sm text-foreground mb-2">
+                {coupon.description}
               </p>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Min: ৳{coupon.minPurchase}</span>
+                <span>Valid until {coupon.validUntil}</span>
+              </div>
             </div>
           ))}
         </div>

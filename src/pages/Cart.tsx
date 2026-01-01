@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Minus, Plus, X, ShoppingBag } from "lucide-react";
+import { Minus, Plus, X, ShoppingBag, Loader2 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
+import { useCart, useUpdateCartItem, useRemoveFromCart, useClearCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 interface CartItem {
   id: number;
@@ -38,29 +40,104 @@ const initialCartItems: CartItem[] = [
 ];
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems);
   const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{code: string; discount: number; type: 'percentage' | 'fixed'} | null>(null);
 
-  const updateQuantity = (id: number, delta: number) => {
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item
-      )
+  // Fetch cart data
+  const { data: cartData, isLoading, error } = useCart();
+  const updateCartItem = useUpdateCartItem();
+  const removeFromCart = useRemoveFromCart();
+  const clearCart = useClearCart();
+
+  const cartItems = cartData?.data || [];
+  const apiTotal = cartData?.total || 0;
+
+  // Available coupons (you can fetch from API later)
+  const availableCoupons = [
+    { code: 'JB15', discount: 15, type: 'percentage' as const, minOrder: 1000 },
+    { code: 'KB10', discount: 10, type: 'percentage' as const, minOrder: 500 },
+    { code: 'SAVE100', discount: 100, type: 'fixed' as const, minOrder: 2000 },
+    { code: 'SAVE200', discount: 200, type: 'fixed' as const, minOrder: 3000 },
+  ];
+
+  const applyCoupon = () => {
+    if (!couponCode.trim()) {
+      toast.error("Please enter a coupon code");
+      return;
+    }
+
+    const coupon = availableCoupons.find(c => c.code.toLowerCase() === couponCode.toLowerCase());
+    
+    if (!coupon) {
+      toast.error("Invalid coupon code");
+      return;
+    }
+
+    if (apiTotal < coupon.minOrder) {
+      toast.error(`Minimum order amount ৳${coupon.minOrder} required for this coupon`);
+      return;
+    }
+
+    setAppliedCoupon(coupon);
+    localStorage.setItem('appliedCoupon', JSON.stringify(coupon));
+    toast.success(`Coupon "${coupon.code}" applied successfully!`);
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    localStorage.removeItem('appliedCoupon');
+    toast.info("Coupon removed");
+  };
+
+  const updateQuantity = (id: number, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    
+    updateCartItem.mutate(
+      { id, quantity: newQuantity },
+      {
+        onError: () => {
+          toast.error("Failed to update quantity");
+        },
+      }
     );
   };
 
   const removeItem = (id: number) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
+    removeFromCart.mutate(id, {
+      onSuccess: () => {
+        toast.success("Item removed from cart");
+      },
+      onError: () => {
+        toast.error("Failed to remove item");
+      },
+    });
   };
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const handleClearCart = () => {
+    if (confirm("Are you sure you want to clear your cart?")) {
+      clearCart.mutate(undefined, {
+        onSuccess: () => {
+          toast.success("Cart cleared");
+        },
+      });
+    }
+  };
+
+  const subtotal = apiTotal;
   const shipping = subtotal > 2000 ? 0 : 100;
-  const total = subtotal + shipping;
+  
+  // Calculate discount
+  let discount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === 'percentage') {
+      discount = Math.round((subtotal * appliedCoupon.discount) / 100);
+    } else {
+      discount = appliedCoupon.discount;
+    }
+  }
+  
+  const total = subtotal + shipping - discount;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -83,7 +160,18 @@ const Cart = () => {
             Shopping Cart
           </h1>
 
-          {cartItems.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-16">
+              <p className="text-red-500 mb-4">Failed to load cart</p>
+              <button onClick={() => window.location.reload()} className="btn-primary">
+                Retry
+              </button>
+            </div>
+          ) : cartItems.length === 0 ? (
             <div className="text-center py-16">
               <ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <h2 className="text-xl font-medium text-foreground mb-2">
@@ -109,83 +197,97 @@ const Cart = () => {
                 </div>
 
                 {/* Items */}
-                {cartItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="grid grid-cols-1 md:grid-cols-12 gap-4 py-4 border-b border-border items-center"
-                  >
-                    {/* Product */}
-                    <div className="md:col-span-6 flex items-center gap-4">
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      <div className="w-20 h-20 bg-secondary/20 rounded-lg overflow-hidden flex-shrink-0">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <Link
-                        to={`/product/${item.id}`}
-                        className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2"
-                      >
-                        {item.name}
-                      </Link>
-                    </div>
-
-                    {/* Price */}
-                    <div className="md:col-span-2 text-center">
-                      <span className="md:hidden text-muted-foreground text-sm mr-2">
-                        Price:
-                      </span>
-                      <span className="font-medium">৳{item.price}</span>
-                    </div>
-
-                    {/* Quantity */}
-                    <div className="md:col-span-2 flex justify-center">
-                      <div className="flex items-center border border-border rounded-lg">
+                {cartItems.map((item: any) => {
+                  const itemPrice = item.sale_price || item.price;
+                  const itemSubtotal = itemPrice * item.quantity;
+                  
+                  return (
+                    <div
+                      key={item.id}
+                      className="grid grid-cols-1 md:grid-cols-12 gap-4 py-4 border-b border-border items-center"
+                    >
+                      {/* Product */}
+                      <div className="md:col-span-6 flex items-center gap-4">
                         <button
-                          onClick={() => updateQuantity(item.id, -1)}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-secondary/50 transition-colors"
+                          onClick={() => removeItem(item.id)}
+                          disabled={removeFromCart.isPending}
+                          className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                         >
-                          <Minus className="w-3 h-3" />
+                          <X className="w-4 h-4" />
                         </button>
-                        <span className="w-10 text-center text-sm font-medium">
-                          {item.quantity}
+                        <div className="w-20 h-20 bg-secondary/20 rounded-lg overflow-hidden flex-shrink-0">
+                          <img
+                            src={item.main_image || "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?w=200"}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <Link
+                          to={`/shop/${item.slug}`}
+                          className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2"
+                        >
+                          {item.name}
+                        </Link>
+                      </div>
+
+                      {/* Price */}
+                      <div className="md:col-span-2 text-center">
+                        <span className="md:hidden text-muted-foreground text-sm mr-2">
+                          Price:
                         </span>
-                        <button
-                          onClick={() => updateQuantity(item.id, 1)}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-secondary/50 transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
+                        <span className="font-medium">৳{itemPrice}</span>
+                      </div>
+
+                      {/* Quantity */}
+                      <div className="md:col-span-2 flex justify-center">
+                        <div className="flex items-center border border-border rounded-lg">
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            disabled={updateCartItem.isPending || item.quantity <= 1}
+                            className="w-8 h-8 flex items-center justify-center hover:bg-secondary/50 transition-colors disabled:opacity-50"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="w-12 text-center font-medium">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            disabled={updateCartItem.isPending || item.quantity >= item.stock_quantity}
+                            className="w-8 h-8 flex items-center justify-center hover:bg-secondary/50 transition-colors disabled:opacity-50"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Subtotal */}
+                      <div className="md:col-span-2 text-right">
+                        <span className="md:hidden text-muted-foreground text-sm mr-2">
+                          Subtotal:
+                        </span>
+                        <span className="font-semibold">৳{itemSubtotal}</span>
                       </div>
                     </div>
-
-                    {/* Subtotal */}
-                    <div className="md:col-span-2 text-right">
-                      <span className="md:hidden text-muted-foreground text-sm mr-2">
-                        Subtotal:
-                      </span>
-                      <span className="font-bold text-primary">
-                        ৳{item.price * item.quantity}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* Continue Shopping */}
-                <div className="pt-4">
+                <div className="pt-4 flex justify-between items-center">
                   <Link
                     to="/shop"
                     className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     ← Continue Shopping
                   </Link>
+                  {cartItems.length > 0 && (
+                    <button
+                      onClick={handleClearCart}
+                      className="text-sm text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Clear Cart
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -226,19 +328,51 @@ const Cart = () => {
                       <label className="text-sm font-medium text-foreground">
                         Coupon Code
                       </label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="text"
-                          placeholder="Enter code"
-                          value={couponCode}
-                          onChange={(e) => setCouponCode(e.target.value)}
-                          className="flex-1"
-                        />
-                        <button className="btn-outline px-4 text-sm">
-                          Apply
-                        </button>
-                      </div>
+                      {appliedCoupon ? (
+                        <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                          <div>
+                            <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                              {appliedCoupon.code}
+                            </p>
+                            <p className="text-xs text-green-600 dark:text-green-400">
+                              {appliedCoupon.type === 'percentage' 
+                                ? `${appliedCoupon.discount}% off` 
+                                : `৳${appliedCoupon.discount} off`}
+                            </p>
+                          </div>
+                          <button
+                            onClick={removeCoupon}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Input
+                            type="text"
+                            placeholder="Enter code (e.g., JB15, KB10)"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            onKeyDown={(e) => e.key === 'Enter' && applyCoupon()}
+                            className="flex-1"
+                          />
+                          <button 
+                            onClick={applyCoupon}
+                            className="btn-outline px-4 text-sm"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      )}
                     </div>
+
+                    {discount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                        <span>Discount</span>
+                        <span className="font-medium">-৳{discount}</span>
+                      </div>
+                    )}
 
                     <hr className="border-border" />
 

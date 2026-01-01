@@ -1,26 +1,103 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AccountLayout from "@/components/account/AccountLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useProfile, useUpdateProfile } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const AccountDetails = () => {
+  const { data: profile, isLoading } = useProfile();
+  const updateProfileMutation = useUpdateProfile();
+
   const [formData, setFormData] = useState({
-    firstName: "Tajlina",
-    lastName: "Sultana Nira",
-    email: "tajlina@example.com",
-    phone: "01712345678",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        firstName: profile.first_name || "",
+        lastName: profile.last_name || "",
+        email: profile.email || "",
+        phone: profile.phone || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    }
+  }, [profile]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate password change
+    if (formData.newPassword) {
+      if (!formData.currentPassword) {
+        toast.error("Current password is required to change password");
+        return;
+      }
+      if (formData.newPassword !== formData.confirmPassword) {
+        toast.error("New passwords do not match");
+        return;
+      }
+      if (formData.newPassword.length < 6) {
+        toast.error("Password must be at least 6 characters");
+        return;
+      }
+    }
+
+    const updateData: any = {
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      phone: formData.phone,
+    };
+
+    if (formData.newPassword) {
+      updateData.current_password = formData.currentPassword;
+      updateData.new_password = formData.newPassword;
+    }
+
+    updateProfileMutation.mutate(updateData, {
+      onSuccess: () => {
+        toast.success("Profile updated successfully");
+        setFormData((prev) => ({
+          ...prev,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }));
+      },
+      onError: (error: any) => {
+        toast.error(error.message || "Failed to update profile");
+      },
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <AccountLayout title="Account Details" breadcrumb="Account Details">
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AccountLayout>
+    );
+  }
+
   return (
     <AccountLayout title="Account Details" breadcrumb="Account Details">
-      <form className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-8">
         {/* Personal Information */}
         <div>
           <h3 className="font-medium text-foreground mb-4">Personal Information</h3>
@@ -99,9 +176,20 @@ const AccountDetails = () => {
           </div>
         </div>
 
-        <button type="submit" className="btn-primary">
-          Save Changes
-        </button>
+        <Button 
+          type="submit" 
+          className="btn-primary"
+          disabled={updateProfileMutation.isPending}
+        >
+          {updateProfileMutation.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Changes"
+          )}
+        </Button>
       </form>
     </AccountLayout>
   );

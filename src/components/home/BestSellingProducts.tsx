@@ -1,60 +1,28 @@
 import ProductCard from "../ui/ProductCard";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-
-const products = [
-  {
-    id: 1,
-    name: "COSRX Advanced Snail Mucin Power Essence",
-    image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400",
-    price: 1350,
-    originalPrice: 1650,
-    discount: 18,
-    rating: 5,
-    reviewCount: 124,
-  },
-  {
-    id: 2,
-    name: "Some By Mi AHA BHA PHA 30 Days Miracle Toner",
-    image: "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=400",
-    price: 1200,
-    originalPrice: 1450,
-    discount: 17,
-    rating: 4,
-    reviewCount: 89,
-  },
-  {
-    id: 3,
-    name: "Klairs Freshly Juiced Vitamin Drop Serum",
-    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400",
-    price: 1650,
-    originalPrice: 1850,
-    discount: 11,
-    rating: 5,
-    reviewCount: 156,
-  },
-  {
-    id: 4,
-    name: "PURITO Centella Green Level Buffet Serum",
-    image: "https://images.unsplash.com/photo-1617897903246-719242758050?w=400",
-    price: 1100,
-    originalPrice: 1350,
-    discount: 19,
-    rating: 4,
-    reviewCount: 67,
-  },
-  {
-    id: 5,
-    name: "Isntree Hyaluronic Acid Watery Sun Gel",
-    image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400",
-    price: 1450,
-    originalPrice: 1700,
-    discount: 15,
-    rating: 5,
-    reviewCount: 203,
-  },
-];
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { useProducts } from "@/hooks/useProducts";
 
 const BestSellingProducts = () => {
+  const { data: productsData, isLoading } = useProducts({
+    featured: 1,
+    limit: 5,
+  });
+
+  if (isLoading) {
+    return (
+      <section className="py-12 bg-background">
+        <div className="container-custom">
+          <h2 className="section-title mb-8">Best Selling Products</h2>
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const products = productsData?.data || [];
+
   return (
     <section className="py-12 bg-background">
       <div className="container-custom">
@@ -71,13 +39,24 @@ const BestSellingProducts = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-          {products.map((product, index) => (
+          {products.map((product: any, index: number) => (
             <div
               key={product.id}
               className="animate-fade-in"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <ProductCard {...product} />
+              <ProductCard
+                id={product.id}
+                name={product.name}
+                slug={product.slug}
+                image={product.main_image}
+                price={product.sale_price || product.price}
+                originalPrice={product.sale_price ? product.price : undefined}
+                discount={product.sale_price ? Math.round(((product.price - product.sale_price) / product.price) * 100) : undefined}
+                rating={product.rating || 0}
+                reviewCount={product.review_count || 0}
+                inStock={product.stock_quantity > 0}
+              />
             </div>
           ))}
         </div>

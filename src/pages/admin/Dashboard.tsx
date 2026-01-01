@@ -14,6 +14,7 @@ import {
   Ban,
   AlertTriangle,
   TrendingUp,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,25 +37,39 @@ import {
   Pie,
   Cell,
 } from "recharts";
-
-const salesData = [
-  { name: "Jan", sales: 4000 },
-  { name: "Feb", sales: 3000 },
-  { name: "Mar", sales: 5000 },
-  { name: "Apr", sales: 4500 },
-  { name: "May", sales: 6000 },
-  { name: "Jun", sales: 5500 },
-  { name: "Jul", sales: 7000 },
-];
-
-const orderSummaryData = [
-  { name: "Delivered", value: 45, color: "#22c55e" },
-  { name: "Cancelled", value: 10, color: "#ef4444" },
-  { name: "Pending", value: 25, color: "#f59e0b" },
-  { name: "Returned", value: 5, color: "#8b5cf6" },
-];
+import { useDashboardStats } from "@/hooks/useAdmin";
 
 const AdminDashboard = () => {
+  const { data: stats, isLoading } = useDashboardStats();
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-96">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Prepare sales data from stats if available
+  const salesData = stats?.monthly_sales || [
+    { name: "Jan", sales: 0 },
+    { name: "Feb", sales: 0 },
+    { name: "Mar", sales: 0 },
+    { name: "Apr", sales: 0 },
+    { name: "May", sales: 0 },
+    { name: "Jun", sales: 0 },
+    { name: "Jul", sales: 0 },
+  ];
+
+  // Prepare order summary data
+  const orderSummaryData = [
+    { name: "Delivered", value: stats?.order_stats?.delivered || 0, color: "#22c55e" },
+    { name: "Cancelled", value: stats?.order_stats?.cancelled || 0, color: "#ef4444" },
+    { name: "Pending", value: stats?.order_stats?.pending || 0, color: "#f59e0b" },
+    { name: "Processing", value: stats?.order_stats?.processing || 0, color: "#8b5cf6" },
+  ];
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -67,25 +82,25 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <AdminStatCard
             title="Total Earnings"
-            value="৳0.00"
+            value={`৳${stats?.total_revenue?.toLocaleString() || '0.00'}`}
             icon={DollarSign}
             variant="pink"
           />
           <AdminStatCard
             title="Total Orders"
-            value="0"
+            value={stats?.total_orders?.toString() || "0"}
             icon={ShoppingBag}
             variant="orange"
           />
           <AdminStatCard
             title="Total Customers"
-            value="1"
+            value={stats?.total_customers?.toString() || "0"}
             icon={Users}
             variant="purple"
           />
           <AdminStatCard
             title="Total Products"
-            value="0"
+            value={stats?.total_products?.toString() || "0"}
             icon={Package}
             variant="red"
           />
@@ -111,56 +126,56 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <OrderStatItem
                 title="Total Orders"
-                value="0"
+                value={stats?.total_orders?.toString() || "0"}
                 icon={ShoppingBag}
                 iconBgColor="bg-pink-100"
                 iconColor="text-primary"
               />
               <OrderStatItem
                 title="Pending"
-                value="0"
+                value={stats?.order_stats?.pending?.toString() || "0"}
                 icon={Clock}
                 iconBgColor="bg-orange-100"
                 iconColor="text-orange-500"
               />
               <OrderStatItem
-                title="Confirmed"
-                value="0"
+                title="Processing"
+                value={stats?.order_stats?.processing?.toString() || "0"}
                 icon={CheckCircle}
                 iconBgColor="bg-green-100"
                 iconColor="text-green-500"
               />
               <OrderStatItem
-                title="Ongoing"
-                value="0"
+                title="Shipped"
+                value={stats?.order_stats?.shipped?.toString() || "0"}
                 icon={TrendingUp}
                 iconBgColor="bg-blue-100"
                 iconColor="text-blue-500"
               />
               <OrderStatItem
                 title="Delivered"
-                value="0"
+                value={stats?.order_stats?.delivered?.toString() || "0"}
                 icon={Truck}
                 iconBgColor="bg-cyan-100"
                 iconColor="text-cyan-500"
               />
               <OrderStatItem
                 title="Cancelled"
-                value="0"
+                value={stats?.order_stats?.cancelled?.toString() || "0"}
                 icon={XCircle}
                 iconBgColor="bg-red-100"
                 iconColor="text-red-500"
               />
               <OrderStatItem
                 title="Returned"
-                value="0"
+                value={stats?.order_stats?.returned?.toString() || "0"}
                 icon={RotateCcw}
                 iconBgColor="bg-purple-100"
                 iconColor="text-purple-500"
               />
               <OrderStatItem
                 title="Rejected"
-                value="0"
+                value={stats?.order_stats?.rejected?.toString() || "0"}
                 icon={Ban}
                 iconBgColor="bg-rose-100"
                 iconColor="text-rose-500"

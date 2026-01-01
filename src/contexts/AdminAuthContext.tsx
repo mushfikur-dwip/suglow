@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { authAPI } from "@/lib/api";
 
 interface AdminUser {
   id: string;
@@ -17,13 +18,8 @@ interface AdminAuthContextType {
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = "admin_session";
-
-// Mock admin credentials (will be replaced with API later)
-const MOCK_ADMINS = [
-  { id: "1", email: "admin@kirei.com", password: "admin123", name: "Admin User", role: "admin" as const },
-  { id: "2", email: "manager@kirei.com", password: "manager123", name: "Store Manager", role: "manager" as const },
-];
+const STORAGE_KEY = "auth_token";
+const USER_KEY = "user";
 
 export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AdminUser | null>(null);
@@ -31,52 +27,66 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Check for existing session on mount
   useEffect(() => {
-    const storedSession = localStorage.getItem(STORAGE_KEY);
-    if (storedSession) {
+    const token = localStorage.getItem(STORAGE_KEY);
+    const storedUser = localStorage.getItem(USER_KEY);
+    
+    if (token && storedUser) {
       try {
-        const parsed = JSON.parse(storedSession);
-        // Check if session is still valid (24 hours)
-        if (parsed.expiresAt && new Date(parsed.expiresAt) > new Date()) {
-          setUser(parsed.user);
+        const parsed = JSON.parse(storedUser);
+        // Only allow admin and manager roles
+        if (parsed.role === 'admin' || parsed.role === 'manager') {
+          setUser({
+            id: parsed.id.toString(),
+            email: parsed.email,
+            name: `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || parsed.email,
+            role: parsed.role
+          });
         } else {
           localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(USER_KEY);
         }
       } catch {
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(USER_KEY);
       }
     }
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      const response = await authAPI.login({ email, password });
 
-    const admin = MOCK_ADMINS.find(
-      (a) => a.email.toLowerCase() === email.toLowerCase() && a.password === password
-    );
+      if (response.success && response.token) {
+        // Only allow admin and manager roles
+        if (response.user.role !== 'admin' && response.user.role !== 'manager') {
+          return { success: false, error: "Access denied. Admin privileges required." };
+        }
 
-    if (!admin) {
-      return { success: false, error: "Invalid email or password" };
+        const adminUser: AdminUser = {
+          id: response.user.id.toString(),
+          email: response.user.email,
+          name: `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim() || response.user.email,
+          role: response.user.role
+        };
+
+        localStorage.setItem(STORAGE_KEY, response.token);
+        localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+        setUser(adminUser);
+
+        return { success: true };
+      }
+
+      return { success: false, error: response.message || "Login failed" };
+    } catch (error: any) {
+      console.error('Login error:', error);
+      return { success: false, error: error.message || "Invalid email or password" };
     }
-
-    const { password: _, ...userWithoutPassword } = admin;
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24);
-
-    const session = {
-      user: userWithoutPassword,
-      expiresAt: expiresAt.toISOString(),
-    };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-    setUser(userWithoutPassword);
-
-    return { success: true };
   };
 
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(USER_KEY);
     setUser(null);
   };
 

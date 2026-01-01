@@ -6,8 +6,11 @@ import {
   Ticket,
   Heart,
   Gift,
+  Loader2,
 } from "lucide-react";
 import AccountLayout from "@/components/account/AccountLayout";
+import { useProfile } from "@/hooks/useAuth";
+import { useOrders } from "@/hooks/useOrders";
 
 const quickLinks = [
   { icon: ShoppingBag, label: "My Orders", path: "/account/orders" },
@@ -19,7 +22,22 @@ const quickLinks = [
 ];
 
 const Dashboard = () => {
-  const userName = "Tajlina Sultana Nira"; // Mock user name
+  const { data: profileData, isLoading: loadingProfile } = useProfile();
+  const { data: ordersData } = useOrders();
+  
+  const user = profileData?.data;
+  const orders = ordersData?.data || [];
+  const userName = user ? `${user.first_name} ${user.last_name}` : "Guest User";
+  
+  if (loadingProfile) {
+    return (
+      <AccountLayout title="Dashboard" breadcrumb="Dashboard">
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AccountLayout>
+    );
+  }
 
   return (
     <AccountLayout title="Dashboard" breadcrumb="Dashboard">
@@ -31,8 +49,34 @@ const Dashboard = () => {
         </h2>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-background border border-border rounded-xl p-4">
+          <p className="text-sm text-muted-foreground mb-1">Total Orders</p>
+          <p className="text-2xl font-bold text-foreground">{orders.length}</p>
+        </div>
+        <div className="bg-background border border-border rounded-xl p-4">
+          <p className="text-sm text-muted-foreground mb-1">Pending</p>
+          <p className="text-2xl font-bold text-yellow-600">
+            {orders.filter((o: any) => o.status === 'pending').length}
+          </p>
+        </div>
+        <div className="bg-background border border-border rounded-xl p-4">
+          <p className="text-sm text-muted-foreground mb-1">Processing</p>
+          <p className="text-2xl font-bold text-blue-600">
+            {orders.filter((o: any) => o.status === 'processing').length}
+          </p>
+        </div>
+        <div className="bg-background border border-border rounded-xl p-4">
+          <p className="text-sm text-muted-foreground mb-1">Delivered</p>
+          <p className="text-2xl font-bold text-green-600">
+            {orders.filter((o: any) => o.status === 'delivered').length}
+          </p>
+        </div>
+      </div>
+
       {/* Quick Links Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {quickLinks.map((item) => (
           <Link
             key={item.path}

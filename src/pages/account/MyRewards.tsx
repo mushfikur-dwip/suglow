@@ -1,9 +1,23 @@
-import { Gift, Star, TrendingUp } from "lucide-react";
+import { Gift, Star, TrendingUp, Loader2 } from "lucide-react";
 import AccountLayout from "@/components/account/AccountLayout";
+import { useRewards } from "@/hooks/useRewards";
 
 const MyRewards = () => {
-  const totalPoints = 250;
+  const { data: rewardsData, isLoading } = useRewards();
+  
+  const totalPoints = rewardsData?.data?.totalPoints || 0;
+  const history = rewardsData?.data?.history || [];
   const nextTierPoints = 500;
+
+  if (isLoading) {
+    return (
+      <AccountLayout title="My Rewards" breadcrumb="My Rewards">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AccountLayout>
+    );
+  }
 
   return (
     <AccountLayout title="My Rewards" breadcrumb="My Rewards">
@@ -22,9 +36,11 @@ const MyRewards = () => {
           <div className="flex items-center gap-3">
             <Gift className="w-10 h-10 text-primary" />
             <div>
-              <p className="font-medium text-foreground">Silver Member</p>
+              <p className="font-medium text-foreground">
+                {totalPoints >= 500 ? 'Gold' : totalPoints >= 250 ? 'Silver' : 'Bronze'} Member
+              </p>
               <p className="text-sm text-muted-foreground">
-                {nextTierPoints - totalPoints} points to Gold
+                {totalPoints < 500 ? `${nextTierPoints - totalPoints} points to next tier` : 'Top Tier Achieved!'}
               </p>
             </div>
           </div>
@@ -35,7 +51,7 @@ const MyRewards = () => {
           <div className="h-2 bg-background rounded-full overflow-hidden">
             <div
               className="h-full bg-primary rounded-full transition-all"
-              style={{ width: `${(totalPoints / nextTierPoints) * 100}%` }}
+              style={{ width: `${Math.min((totalPoints / nextTierPoints) * 100, 100)}%` }}
             />
           </div>
           <div className="flex justify-between mt-2 text-xs text-muted-foreground">
@@ -78,43 +94,52 @@ const MyRewards = () => {
               <Gift className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="font-medium text-foreground">Refer Friends</p>
+              <p className="font-medium text-foreground">Birthday Bonus</p>
               <p className="text-sm text-muted-foreground">
-                Earn 50 points per referral
+                Get 50 points on your birthday
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Points History */}
       <div>
         <h3 className="font-display text-lg font-semibold text-foreground mb-4">
-          Recent Activity
+          Points History
         </h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-3 border-b border-border">
-            <div>
-              <p className="font-medium text-foreground">Order #ORD-2024-001</p>
-              <p className="text-sm text-muted-foreground">Dec 28, 2024</p>
-            </div>
-            <span className="text-green-600 font-medium">+305 points</span>
+        {history.length === 0 ? (
+          <div className="text-center py-8 border border-border rounded-xl">
+            <Gift className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">No reward points yet</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Start shopping to earn your first points!
+            </p>
           </div>
-          <div className="flex items-center justify-between py-3 border-b border-border">
-            <div>
-              <p className="font-medium text-foreground">Product Review</p>
-              <p className="text-sm text-muted-foreground">Dec 25, 2024</p>
-            </div>
-            <span className="text-green-600 font-medium">+10 points</span>
+        ) : (
+          <div className="space-y-3">
+            {history.map((item: any) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between p-4 border border-border rounded-xl"
+              >
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{item.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(item.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+                <div className={`font-bold ${item.points > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {item.points > 0 ? '+' : ''}{item.points}
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="flex items-center justify-between py-3 border-b border-border">
-            <div>
-              <p className="font-medium text-foreground">Redeemed Coupon</p>
-              <p className="text-sm text-muted-foreground">Dec 20, 2024</p>
-            </div>
-            <span className="text-red-500 font-medium">-100 points</span>
-          </div>
-        </div>
+        )}
       </div>
     </AccountLayout>
   );

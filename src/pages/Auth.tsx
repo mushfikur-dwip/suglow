@@ -1,16 +1,79 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Loader2 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useLogin, useRegister } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
+
+  // Login state
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const loginMutation = useLogin();
+
+  // Register state
+  const [registerData, setRegisterData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+  });
+  const registerMutation = useRegister();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!loginData.email || !loginData.password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    loginMutation.mutate(loginData);
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!registerData.email || !registerData.password || !registerData.firstName) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (registerData.password !== registerData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (registerData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    registerMutation.mutate(
+      {
+        email: registerData.email,
+        password: registerData.password,
+        firstName: registerData.firstName,
+        lastName: registerData.lastName,
+        phone: registerData.phone,
+      },
+      {
+        onError: (error: any) => {
+          toast.error(error.message || "Registration failed");
+        },
+      }
+    );
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -41,7 +104,7 @@ const Auth = () => {
 
                 {/* Login Form */}
                 <TabsContent value="login">
-                  <form className="space-y-4">
+                  <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="login-email">Email Address</Label>
                       <div className="relative">
@@ -51,6 +114,9 @@ const Auth = () => {
                           type="email"
                           placeholder="Enter your email"
                           className="pl-10"
+                          value={loginData.email}
+                          onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                          required
                         />
                       </div>
                     </div>
@@ -64,6 +130,9 @@ const Auth = () => {
                           type={showPassword ? "text" : "password"}
                           placeholder="Enter your password"
                           className="pl-10 pr-10"
+                          value={loginData.password}
+                          onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                          required
                         />
                         <button
                           type="button"
@@ -97,8 +166,19 @@ const Auth = () => {
                       </Link>
                     </div>
 
-                    <button type="submit" className="btn-primary w-full">
-                      Login
+                    <button 
+                      type="submit" 
+                      className="btn-primary w-full"
+                      disabled={loginMutation.isPending}
+                    >
+                      {loginMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin inline" />
+                          Logging in...
+                        </>
+                      ) : (
+                        "Login"
+                      )}
                     </button>
 
                     {/* Social Login */}
@@ -157,7 +237,7 @@ const Auth = () => {
 
                 {/* Register Form */}
                 <TabsContent value="register">
-                  <form className="space-y-4">
+                  <form onSubmit={handleRegister} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="first-name">First Name</Label>
@@ -167,12 +247,19 @@ const Auth = () => {
                             id="first-name"
                             placeholder="First name"
                             className="pl-10"
+                            value={registerData.firstName}
+                            onChange={(e) => setRegisterData({ ...registerData, firstName: e.target.value })}
                           />
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="last-name">Last Name</Label>
-                        <Input id="last-name" placeholder="Last name" />
+                        <Input 
+                          id="last-name" 
+                          placeholder="Last name" 
+                          value={registerData.lastName}
+                          onChange={(e) => setRegisterData({ ...registerData, lastName: e.target.value })}
+                        />
                       </div>
                     </div>
 
@@ -185,6 +272,8 @@ const Auth = () => {
                           type="email"
                           placeholder="Enter your email"
                           className="pl-10"
+                          value={registerData.email}
+                          onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                         />
                       </div>
                     </div>
@@ -198,6 +287,8 @@ const Auth = () => {
                           type="tel"
                           placeholder="01XXXXXXXXX"
                           className="pl-10"
+                          value={registerData.phone}
+                          onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
                         />
                       </div>
                     </div>
@@ -211,6 +302,8 @@ const Auth = () => {
                           type={showPassword ? "text" : "password"}
                           placeholder="Create a password"
                           className="pl-10 pr-10"
+                          value={registerData.password}
+                          onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                         />
                         <button
                           type="button"
@@ -235,6 +328,8 @@ const Auth = () => {
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="Confirm your password"
                           className="pl-10 pr-10"
+                          value={registerData.confirmPassword}
+                          onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
                         />
                         <button
                           type="button"
@@ -269,8 +364,19 @@ const Auth = () => {
                       </Label>
                     </div>
 
-                    <button type="submit" className="btn-primary w-full">
-                      Create Account
+                    <button 
+                      type="submit" 
+                      className="btn-primary w-full" 
+                      disabled={registerMutation.isPending}
+                    >
+                      {registerMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin inline" />
+                          Creating Account...
+                        </>
+                      ) : (
+                        "Create Account"
+                      )}
                     </button>
 
                     {/* Social Register */}

@@ -1,10 +1,13 @@
 import { Heart, Star } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAddToCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   id: number;
   name: string;
+  slug: string;
   image: string;
   price: number;
   originalPrice?: number;
@@ -17,6 +20,7 @@ interface ProductCardProps {
 const ProductCard = ({
   id,
   name,
+  slug,
   image,
   price,
   originalPrice,
@@ -26,6 +30,24 @@ const ProductCard = ({
   inStock = true,
 }: ProductCardProps) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const addToCartMutation = useAddToCart();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    addToCartMutation.mutate(
+      { product_id: id, quantity: 1 },
+      {
+        onSuccess: () => {
+          toast.success("Product added to cart!");
+        },
+        onError: (error: any) => {
+          toast.error(error.message || "Failed to add to cart");
+        },
+      }
+    );
+  };
 
   return (
     <div className="card-product relative">
@@ -49,7 +71,7 @@ const ProductCard = ({
         />
       </button>
 
-      <Link to={`/product/${id}`} className="block">
+      <Link to={`/product/${slug}`} className="block">
         {/* Product Image */}
         <div className="aspect-square overflow-hidden bg-secondary/30 p-4">
           <img
@@ -97,7 +119,13 @@ const ProductCard = ({
       {/* Add to Cart Button */}
       {inStock ? (
         <div className="px-4 pb-4">
-          <button className="w-full btn-outline text-sm py-2">Add To Cart</button>
+          <button 
+            onClick={handleAddToCart}
+            disabled={addToCartMutation.isPending}
+            className="w-full btn-outline text-sm py-2"
+          >
+            {addToCartMutation.isPending ? "Adding..." : "Add To Cart"}
+          </button>
         </div>
       ) : (
         <div className="px-4 pb-4">

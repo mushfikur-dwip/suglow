@@ -1,75 +1,53 @@
+import { Loader2 } from "lucide-react";
 import ProductCard from "../ui/ProductCard";
-
-const newProducts = [
-  {
-    id: 1,
-    name: "COSRX Acne Heal Advanced Triple Action",
-    image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400",
-    price: 1250,
-    originalPrice: 1500,
-    discount: 17,
-    rating: 0,
-    reviewCount: 0,
-  },
-  {
-    id: 2,
-    name: "Beauty of Joseon Revive Serum",
-    image: "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=400",
-    price: 1450,
-    originalPrice: 1700,
-    discount: 15,
-    rating: 0,
-    reviewCount: 0,
-  },
-  {
-    id: 3,
-    name: "Skin1004 Madagascar Centella Ampoule",
-    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400",
-    price: 1350,
-    originalPrice: 1600,
-    discount: 16,
-    rating: 0,
-    reviewCount: 0,
-  },
-  {
-    id: 4,
-    name: "Round Lab 1025 Dokdo Cleanser",
-    image: "https://images.unsplash.com/photo-1617897903246-719242758050?w=400",
-    price: 1100,
-    originalPrice: 1300,
-    discount: 15,
-    rating: 0,
-    reviewCount: 0,
-  },
-  {
-    id: 5,
-    name: "ILLIYOON Ceramide Ato Cream",
-    image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400",
-    price: 1650,
-    originalPrice: 1900,
-    discount: 13,
-    rating: 0,
-    reviewCount: 0,
-  },
-];
+import { useProducts } from "@/hooks/useProducts";
 
 const NewArrivals = () => {
+  const { data: productsData, isLoading } = useProducts({
+    sort: "created_at",
+    order: "desc",
+    limit: 5,
+  });
+
+  const products = productsData?.data || [];
+
   return (
     <section className="py-12 bg-background">
       <div className="container-custom">
         <h2 className="section-title text-center mb-8">New Arrivals</h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-          {newProducts.map((product, index) => (
-            <div
-              key={product.id}
-              className="animate-fade-in"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <ProductCard {...product} />
-            </div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+            {products.map((product: any, index: number) => (
+              <div
+                key={product.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <ProductCard
+                  id={product.id}
+                  slug={product.slug}
+                  name={product.name}
+                  image={product.main_image}
+                  price={product.sale_price || product.price}
+                  originalPrice={product.sale_price ? product.price : undefined}
+                  discount={
+                    product.sale_price
+                      ? Math.round(((product.price - product.sale_price) / product.price) * 100)
+                      : undefined
+                  }
+                  rating={product.average_rating || 0}
+                  reviewCount={product.review_count || 0}
+                  inStock={product.stock_quantity > 0}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -2,8 +2,9 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/ui/ProductCard";
 import { useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Filter, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Filter, X, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useProducts } from "@/hooks/useProducts";
 
 const categories = [
   { name: "J-Beauty", count: 123 },
@@ -40,6 +41,23 @@ const Shop = () => {
   const [selectedSkinTypes, setSelectedSkinTypes] = useState<string[]>([]);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
+  const [limit, setLimit] = useState(24);
+
+  // Fetch products with filters
+  const { data, isLoading, error } = useProducts({
+    category: selectedCategory || undefined,
+    minPrice: priceRange.min || undefined,
+    maxPrice: priceRange.max > 0 ? priceRange.max : undefined,
+    sort: sortBy,
+    order: sortOrder,
+    page: currentPage,
+    limit: limit,
+  });
+
+  const products = data?.data || [];
+  const pagination = data?.pagination || { page: 1, totalPages: 1, total: 0 };
 
   const toggleSkinType = (type: string) => {
     setSelectedSkinTypes((prev) =>
@@ -200,59 +218,125 @@ const Shop = () => {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">Sort By:</span>
-                  <select className="border border-border rounded-lg px-3 py-1.5 text-sm bg-background">
-                    <option>Default</option>
-                    <option>Price: Low to High</option>
-                    <option>Price: High to Low</option>
-                    <option>Newest</option>
-                    <option>Best Selling</option>
+                  <select 
+                    className="border border-border rounded-lg px-3 py-1.5 text-sm bg-background"
+                    value={`${sortBy}-${sortOrder}`}
+                    onChange={(e) => {
+                      const [field, order] = e.target.value.split('-');
+                      setSortBy(field);
+                      setSortOrder(order as 'ASC' | 'DESC');
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <option value="created_at-DESC">Newest</option>
+                    <option value="price-ASC">Price: Low to High</option>
+                    <option value="price-DESC">Price: High to Low</option>
+                    <option value="name-ASC">Name: A to Z</option>
+                    <option value="name-DESC">Name: Z to A</option>
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground hidden sm:inline">Show:</span>
-                  <select className="border border-border rounded-lg px-3 py-1.5 text-sm bg-background">
-                    <option>24</option>
-                    <option>48</option>
-                    <option>96</option>
+                  <select 
+                    className="border border-border rounded-lg px-3 py-1.5 text-sm bg-background"
+                    value={limit}
+                    onChange={(e) => {
+                      setLimit(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <option value={12}>12</option>
+                    <option value={24}>24</option>
+                    <option value={48}>48</option>
+                    <option value={96}>96</option>
                   </select>
                 </div>
               </div>
 
-              {/* Products */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {products.map((product, index) => (
-                  <div
-                    key={product.id}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <ProductCard {...product} />
-                  </div>
-                ))}
-              </div>
+              {/* Loading State */}
+              {isLoading && (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              )}
 
-              {/* Pagination */}
-              <div className="flex items-center justify-center gap-2 mt-8">
-                <button className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-secondary transition-colors">
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                {[1, 2, 3, 4, 5, 6].map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                      currentPage === page
-                        ? "bg-foreground text-background"
-                        : "border border-border hover:bg-secondary"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-secondary transition-colors">
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
+              {/* Error State */}
+              {error && (
+                <div className="text-center py-20">
+                  <p className="text-red-500">Failed to load products. Please try again.</p>
+                </div>
+              )}
+
+              {/* Products */}
+              {!isLoading && !error && products.length > 0 && (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {products.map((product: any, index: number) => (
+                      <div
+                        key={product.id}
+                        className="animate-fade-in"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <ProductCard
+                          id={product.id}
+                          slug={product.slug}
+                          name={product.name}
+                          image={product.main_image || "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400"}
+                          price={product.sale_price || product.price}
+                          originalPrice={product.sale_price ? product.price : undefined}
+                          discount={product.sale_price ? Math.round(((product.price - product.sale_price) / product.price) * 100) : 0}
+                          rating={product.average_rating || 0}
+                          reviewCount={product.review_count || 0}
+                          inStock={product.stock_quantity > 0}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="flex items-center justify-center gap-2 mt-8">
+                    <button 
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    
+                    {Array.from({ length: Math.min(6, pagination.totalPages) }, (_, i) => {
+                      const page = i + 1;
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            currentPage === page
+                              ? "bg-foreground text-background"
+                              : "border border-border hover:bg-secondary"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                    
+                    <button 
+                      onClick={() => setCurrentPage(Math.min(pagination.totalPages, currentPage + 1))}
+                      disabled={currentPage === pagination.totalPages}
+                      className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* No Products */}
+              {!isLoading && !error && products.length === 0 && (
+                <div className="text-center py-20">
+                  <p className="text-muted-foreground">No products found.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

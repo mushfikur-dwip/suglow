@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import ProtectedAdminRoute from "@/components/admin/ProtectedAdminRoute";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import ProductDetails from "./pages/ProductDetails";
@@ -28,6 +29,8 @@ import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/Products";
+import AdminAddProduct from "./pages/admin/AddProduct";
+import AdminEditProduct from "./pages/admin/EditProduct";
 import AdminOnlineOrders from "./pages/admin/OnlineOrders";
 import AdminCustomers from "./pages/admin/Customers";
 import AdminCoupons from "./pages/admin/Coupons";
@@ -51,7 +54,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/shop" element={<Shop />} />
-            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/product/:slug" element={<ProductDetails />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/auth" element={<Auth />} />
@@ -59,18 +62,23 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<About />} />
             <Route path="/faq" element={<FAQ />} />
-            <Route path="/account" element={<Dashboard />} />
-            <Route path="/account/orders" element={<MyOrders />} />
-            <Route path="/account/details" element={<AccountDetails />} />
-            <Route path="/account/verify" element={<VerifyProduct />} />
-            <Route path="/account/coupons" element={<MyCoupons />} />
-            <Route path="/account/wishlist" element={<MyWishlist />} />
-            <Route path="/account/rewards" element={<MyRewards />} />
+            
+            {/* Protected Account Routes */}
+            <Route path="/account" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/account/my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
+            <Route path="/account/orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
+            <Route path="/account/details" element={<ProtectedRoute><AccountDetails /></ProtectedRoute>} />
+            <Route path="/account/verify" element={<ProtectedRoute><VerifyProduct /></ProtectedRoute>} />
+            <Route path="/account/coupons" element={<ProtectedRoute><MyCoupons /></ProtectedRoute>} />
+            <Route path="/account/wishlist" element={<ProtectedRoute><MyWishlist /></ProtectedRoute>} />
+            <Route path="/account/rewards" element={<ProtectedRoute><MyRewards /></ProtectedRoute>} />
             
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
             <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProducts /></ProtectedAdminRoute>} />
+            <Route path="/admin/products/add" element={<ProtectedAdminRoute><AdminAddProduct /></ProtectedAdminRoute>} />
+            <Route path="/admin/products/edit/:id" element={<ProtectedAdminRoute><AdminEditProduct /></ProtectedAdminRoute>} />
             <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOnlineOrders /></ProtectedAdminRoute>} />
             <Route path="/admin/customers" element={<ProtectedAdminRoute><AdminCustomers /></ProtectedAdminRoute>} />
             <Route path="/admin/coupons" element={<ProtectedAdminRoute><AdminCoupons /></ProtectedAdminRoute>} />

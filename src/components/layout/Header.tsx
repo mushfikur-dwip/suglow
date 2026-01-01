@@ -1,6 +1,7 @@
 import { Search, Phone, Heart, ShoppingCart, User, Menu, ChevronDown, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import { useCart } from "@/hooks/useCart";
 
 const categories = [
   { name: "K-Beauty", slug: "k-beauty", icon: "🇰🇷" },
@@ -22,6 +23,10 @@ const Header = () => {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
   const categoryRef = useRef<HTMLDivElement>(null);
+  
+  // Get cart data
+  const { data: cartData } = useCart();
+  const cartItemsCount = cartData?.data?.length || 0;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -86,9 +91,11 @@ const Header = () => {
                 </Link>
                 <Link to="/cart" className="p-2 hover:bg-secondary rounded-full transition-colors relative">
                   <ShoppingCart className="h-5 w-5 text-foreground" />
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
-                    0
-                  </span>
+                  {cartItemsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
+                      {cartItemsCount}
+                    </span>
+                  )}
                 </Link>
                 <Link to="/account" className="p-2 hover:bg-secondary rounded-full transition-colors">
                   <User className="h-5 w-5 text-foreground" />

@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Star, Heart, ChevronLeft, ChevronRight, Minus, Plus, HelpCircle, Download, Tag } from "lucide-react";
+import { Star, Heart, ChevronLeft, ChevronRight, Minus, Plus, HelpCircle, Download, Tag, Loader2 } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useProduct } from "@/hooks/useProducts";
+import { useAddToCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 // Mock product data
 const mockProduct = {
@@ -34,24 +37,87 @@ const recommendedProducts = [
 ];
 
 const ProductDetails = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-  const product = mockProduct; // In real app, fetch by id
+  // Fetch product data
+  const { data, isLoading, error } = useProduct(slug || '');
+  const addToCart = useAddToCart();
+
+  const product = data?.data;
+  const reviews = data?.data?.reviews || [];
+
+  // Parse gallery images
+  const images = product?.gallery_images 
+    ? (typeof product.gallery_images === 'string' 
+        ? JSON.parse(product.gallery_images) 
+        : product.gallery_images)
+    : [];
+  
+  const allImages = [
+    product?.main_image || "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?w=500",
+    ...images
+  ];
 
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => Math.max(1, prev + delta));
   };
 
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    addToCart.mutate(
+      { product_id: product.id, quantity },
+      {
+        onSuccess: () => {
+          toast.success(`${product.name} added to cart!`);
+        },
+        onError: () => {
+          toast.error('Failed to add to cart');
+        },
+      }
+    );
+  };
+
   const nextImage = () => {
-    setSelectedImage((prev) => (prev + 1) % product.images.length);
+    setSelectedImage((prev) => (prev + 1) % allImages.length);
   };
 
   const prevImage = () => {
-    setSelectedImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+    setSelectedImage((prev) => (prev - 1 + allImages.length) % allImages.length);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-semibold mb-2">Product Not Found</h2>
+            <p className="text-muted-foreground mb-4">The product you're looking for doesn't exist.</p>
+            <Link to="/shop" className="btn-primary">
+              Back to Shop
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -77,7 +143,7 @@ const ProductDetails = () => {
               {/* Main Image */}
               <div className="relative aspect-square bg-secondary/20 rounded-lg overflow-hidden">
                 <img
-                  src={product.images[selectedImage]}
+                  src={allImages[selectedImage]}
                   alt={product.name}
                   className="w-full h-full object-contain p-8"
                 />
@@ -93,7 +159,7 @@ const ProductDetails = () => {
                 </button>
 
                 <div className="flex-1 flex gap-2 overflow-x-auto py-2">
-                  {product.images.map((img, index) => (
+                  {allImages.map((img, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(index)}
@@ -139,29 +205,36 @@ const ProductDetails = () => {
                     <Star
                       key={i}
                       className={`h-4 w-4 ${
-                        i < product.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground"
+                        i < 0 ? "fill-amber-400 text-amber-400" : "text-muted-foreground"
                       }`}
                     />
                   ))}
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  (There is no review yet.)
+                  ({reviews.length} review{reviews.length !== 1 ? 's' : ''})
                 </span>
               </div>
 
               {/* Price */}
               <div className="text-2xl font-bold text-foreground">
-                ৳{product.price}
-                {product.originalPrice && product.originalPrice > product.price && (
+                ৳{product.sale_price || product.price}
+                {product.sale_price && (
                   <span className="ml-2 text-lg font-normal text-muted-foreground line-through">
-                    ৳{product.originalPrice}
+                    ৳{product.price}
                   </span>
                 )}
               </div>
 
               {/* Brand */}
-              <p className="text-muted-foreground">
-                Brand: <span className="text-foreground">{product.brand}</span>
+              {product.brand && (
+                <p className="text-muted-foreground">
+                  Brand: <span className="text-foreground">{product.brand}</span>
+                </p>
+              )}
+
+              {/* Stock Status */}
+              <p className={`text-sm font-medium ${product.stock_quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {product.stock_quantity > 0 ? `In Stock (${product.stock_quantity} available)` : 'Out of Stock'}
               </p>
 
               {/* Concerned Button */}
@@ -173,11 +246,20 @@ const ProductDetails = () => {
               <hr className="border-border" />
 
               {/* Category */}
-              <div className="flex items-center gap-2 text-sm">
-                <Tag className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Category:</span>
-                <span className="text-foreground">{product.category.join(", ")}</span>
-              </div>
+              {product.category_name && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Tag className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Category:</span>
+                  <span className="text-foreground">{product.category_name}</span>
+                </div>
+              )}
+
+              {/* SKU */}
+              {product.sku && (
+                <p className="text-sm text-muted-foreground">
+                  SKU: <span className="text-foreground">{product.sku}</span>
+                </p>
+              )}
 
               {/* App Download Banner */}
               <div className="inline-flex items-center gap-2 px-4 py-3 bg-pink-soft rounded-lg text-sm">
@@ -206,7 +288,13 @@ const ProductDetails = () => {
                   </button>
                 </div>
 
-                <button className="btn-primary px-8">Add To Cart</button>
+                <button 
+                  onClick={handleAddToCart}
+                  disabled={product.stock_quantity === 0 || addToCart.isPending}
+                  className="btn-primary px-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {addToCart.isPending ? 'Adding...' : 'Add To Cart'}
+                </button>
 
                 <button
                   onClick={() => setIsWishlisted(!isWishlisted)}
