@@ -135,7 +135,7 @@ export const getProfile = async (req, res) => {
 
     res.json({
       success: true,
-      user: users[0]
+      data: users[0]
     });
   } catch (error) {
     console.error('Get profile error:', error);

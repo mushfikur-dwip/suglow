@@ -31,7 +31,12 @@ apiClient.interceptors.response.use(
       // Token expired or invalid
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
-      window.location.href = '/auth';
+      
+      // Only redirect if on protected routes
+      if (window.location.pathname.startsWith('/account') || 
+          window.location.pathname.startsWith('/admin')) {
+        window.location.href = '/auth';
+      }
     }
     return Promise.reject(error.response?.data || error.message);
   }
