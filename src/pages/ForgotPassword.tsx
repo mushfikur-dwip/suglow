@@ -28,7 +28,7 @@ const ForgotPassword = () => {
             <div className="text-center mb-8">
               <Link to="/" className="inline-block">
                 <h1 className="font-display text-3xl font-bold text-primary">
-                  Kirei
+                  suGlow
                 </h1>
               </Link>
             </div>

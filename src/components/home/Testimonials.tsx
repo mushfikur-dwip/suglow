@@ -24,7 +24,7 @@ const testimonials = [
     name: "Nadia Islam",
     avatar: "N",
     rating: 5,
-    text: "I've been ordering from Kirei for over a year now. Never disappointed with the quality and authenticity.",
+    text: "I've been ordering from suGlow for over a year now. Never disappointed with the quality and authenticity.",
     bgColor: "bg-secondary",
   },
 ];

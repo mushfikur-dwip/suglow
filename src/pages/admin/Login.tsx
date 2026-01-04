@@ -75,7 +75,7 @@ const AdminLogin = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <Link to="/" className="inline-block">
-            <h1 className="font-display text-3xl font-bold text-primary">Kirei</h1>
+            <h1 className="font-display text-3xl font-bold text-primary">suGlow</h1>
           </Link>
           <p className="text-muted-foreground">Admin Panel Login</p>
         </CardHeader>
@@ -86,7 +86,7 @@ const AdminLogin = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@kirei.com"
+                placeholder="admin@suGlow.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={errors.email ? "border-destructive" : ""}
@@ -136,7 +136,7 @@ const AdminLogin = () => {
               )}
             </Button>
             <p className="text-xs text-center text-muted-foreground mt-2">
-              Demo: admin@kirei.com / admin123
+              Demo: admin@suGlow.com / admin123
             </p>
           </form>
           <div className="mt-6 text-center">

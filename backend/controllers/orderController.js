@@ -212,13 +212,17 @@ export const getOrderDetails = async (req, res) => {
     const [orders] = await db.query(
       `SELECT o.*, 
        sa.first_name as shipping_first_name, sa.last_name as shipping_last_name,
-       sa.phone as shipping_phone, sa.address_line1 as shipping_address_line1,
+       sa.email as shipping_email, sa.phone as shipping_phone, 
+       sa.address_line1 as shipping_address_line1,
        sa.address_line2 as shipping_address_line2, sa.city as shipping_city,
        sa.state as shipping_state, sa.postal_code as shipping_postal_code,
+       sa.country as shipping_country,
        ba.first_name as billing_first_name, ba.last_name as billing_last_name,
-       ba.phone as billing_phone, ba.address_line1 as billing_address_line1,
+       ba.email as billing_email, ba.phone as billing_phone, 
+       ba.address_line1 as billing_address_line1,
        ba.address_line2 as billing_address_line2, ba.city as billing_city,
-       ba.state as billing_state, ba.postal_code as billing_postal_code
+       ba.state as billing_state, ba.postal_code as billing_postal_code,
+       ba.country as billing_country
        FROM orders o
        LEFT JOIN addresses sa ON o.shipping_address_id = sa.id
        LEFT JOIN addresses ba ON o.billing_address_id = ba.id
@@ -241,12 +245,63 @@ export const getOrderDetails = async (req, res) => {
       [id]
     );
 
+    const order = orders[0];
+    
+    // Structure the shipping and billing addresses properly
+    const formattedOrder = {
+      ...order,
+      shipping_address: {
+        first_name: order.shipping_first_name,
+        last_name: order.shipping_last_name,
+        email: order.shipping_email,
+        phone: order.shipping_phone,
+        address_line1: order.shipping_address_line1,
+        address_line2: order.shipping_address_line2,
+        city: order.shipping_city,
+        state: order.shipping_state,
+        postal_code: order.shipping_postal_code,
+        country: order.shipping_country,
+      },
+      billing_address: {
+        first_name: order.billing_first_name,
+        last_name: order.billing_last_name,
+        email: order.billing_email,
+        phone: order.billing_phone,
+        address_line1: order.billing_address_line1,
+        address_line2: order.billing_address_line2,
+        city: order.billing_city,
+        state: order.billing_state,
+        postal_code: order.billing_postal_code,
+        country: order.billing_country,
+      },
+      items
+    };
+
+    // Remove the flat address fields
+    delete formattedOrder.shipping_first_name;
+    delete formattedOrder.shipping_last_name;
+    delete formattedOrder.shipping_email;
+    delete formattedOrder.shipping_phone;
+    delete formattedOrder.shipping_address_line1;
+    delete formattedOrder.shipping_address_line2;
+    delete formattedOrder.shipping_city;
+    delete formattedOrder.shipping_state;
+    delete formattedOrder.shipping_postal_code;
+    delete formattedOrder.shipping_country;
+    delete formattedOrder.billing_first_name;
+    delete formattedOrder.billing_last_name;
+    delete formattedOrder.billing_email;
+    delete formattedOrder.billing_phone;
+    delete formattedOrder.billing_address_line1;
+    delete formattedOrder.billing_address_line2;
+    delete formattedOrder.billing_city;
+    delete formattedOrder.billing_state;
+    delete formattedOrder.billing_postal_code;
+    delete formattedOrder.billing_country;
+
     res.json({
       success: true,
-      data: {
-        ...orders[0],
-        items
-      }
+      data: formattedOrder
     });
   } catch (error) {
     console.error('Get order details error:', error);

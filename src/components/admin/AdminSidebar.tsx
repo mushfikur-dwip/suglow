@@ -125,7 +125,7 @@ const AdminSidebar = ({ isOpen, onToggle }: AdminSidebarProps) => {
         )}>
           {isOpen ? (
             <Link to="/admin" className="flex items-center gap-2">
-              <span className="font-display text-xl font-bold text-primary">Kirei</span>
+              <span className="font-display text-xl font-bold text-primary">suGlow</span>
               <span className="text-xs text-muted-foreground">Admin</span>
             </Link>
           ) : (

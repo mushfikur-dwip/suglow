@@ -10,7 +10,7 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <h2 className="font-display text-3xl font-bold text-primary italic mb-4">
-              Kirei
+              suGlow
             </h2>
             <p className="text-background/70 text-sm mb-6">
               We are ensuring a delightful shopping experience for every customer.
@@ -28,9 +28,9 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Kirei Links */}
+          {/* suGlow Links */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Kirei</h3>
+            <h3 className="font-semibold text-lg mb-4">suGlow</h3>
             <ul className="space-y-2 text-sm text-background/70">
               <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
               <li><Link to="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
@@ -49,7 +49,7 @@ const Footer = () => {
               <li><Link to="/account/orders" className="hover:text-primary transition-colors">My Orders</Link></li>
               <li><Link to="/account/wishlist" className="hover:text-primary transition-colors">My Wishlist</Link></li>
               <li><Link to="/account/coupons" className="hover:text-primary transition-colors">My Coupons</Link></li>
-              <li><Link to="/account/rewards" className="hover:text-primary transition-colors">My Rewards</Link></li>
+              {/* <li><Link to="/account/rewards" className="hover:text-primary transition-colors">My Rewards</Link></li> */}
               <li><Link to="/cart" className="hover:text-primary transition-colors">Shopping Cart</Link></li>
             </ul>
           </div>
@@ -102,7 +102,7 @@ const Footer = () => {
       <div className="border-t border-background/10">
         <div className="container-custom py-4">
           <p className="text-center text-sm text-background/50">
-            Kirei © 2025. All rights reserved.
+            suGlow © 2025. All rights reserved.
           </p>
         </div>
       </div>

@@ -16,7 +16,7 @@ const YouTubeSection = () => {
             <div className="absolute bottom-4 left-4 right-4">
               <div className="bg-background/90 backdrop-blur-sm rounded-lg p-3">
                 <p className="text-sm font-medium text-foreground">Beauty Tips & Tutorials</p>
-                <p className="text-xs text-muted-foreground">Watch on Kirei Tube</p>
+                <p className="text-xs text-muted-foreground">Watch on suGlow Tube</p>
               </div>
             </div>
           </div>
@@ -25,7 +25,7 @@ const YouTubeSection = () => {
           <div className="text-center md:text-left">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
               Discover Beauty<br />
-              <span className="text-primary">With Kirei Tube</span>
+              <span className="text-primary">With suGlow Tube</span>
             </h2>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto md:mx-0">
               Subscribe to our YouTube channel for daily skincare tips, product reviews, and beauty tutorials from industry experts.

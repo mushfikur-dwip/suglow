@@ -81,7 +81,7 @@ JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRES_IN=24h
 
 # Admin credentials (প্রথম login এর জন্য)
-ADMIN_EMAIL=admin@kirei.com
+ADMIN_EMAIL=admin@suGlow.com
 ADMIN_PASSWORD=admin123
 
 # File upload
@@ -136,7 +136,7 @@ POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@kirei.com",
+  "email": "admin@suGlow.com",
   "password": "admin123"
 }
 ```
@@ -166,11 +166,11 @@ npm run dev
 ## Default Login Credentials
 
 ### Admin Panel Login:
-- **Email:** admin@kirei.com
+- **Email:** admin@suGlow.com
 - **Password:** admin123
 
 ### Manager Login:
-- **Email:** manager@kirei.com
+- **Email:** manager@suGlow.com
 - **Password:** manager123
 
 ## Troubleshooting

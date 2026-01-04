@@ -80,12 +80,12 @@ const createDefaultAdmin = async () => {
     }
 
     // Create manager if not exists
-    const [managers] = await db.query('SELECT id FROM users WHERE email = ?', ['manager@kirei.com']);
+    const [managers] = await db.query('SELECT id FROM users WHERE email = ?', ['manager@suGlow.com']);
     if (managers.length === 0) {
       const hashedPassword = await bcrypt.hash('manager123', 10);
       await db.query(
         'INSERT INTO users (email, password, first_name, last_name, role, status) VALUES (?, ?, ?, ?, ?, ?)',
-        ['manager@kirei.com', hashedPassword, 'Manager', 'User', 'manager', 'active']
+        ['manager@suGlow.com', hashedPassword, 'Manager', 'User', 'manager', 'active']
       );
       console.log('✅ Default manager user created');
     }

@@ -18,15 +18,15 @@ const Index = () => {
       
       <main className="flex-1">
         <HeroBanner />
-        <FeaturedCategories />
-        <ShopByConcern />
+        {/* <FeaturedCategories />
+        <ShopByConcern /> */}
         <BestSellingProducts />
         <PromoBanners />
-        <InternationalBrands />
+        {/* <InternationalBrands /> */}
         <TrendingProducts />
         <Testimonials />
         <NewArrivals />
-        <YouTubeSection />
+        {/* <YouTubeSection /> */}
       </main>
 
       <Footer />

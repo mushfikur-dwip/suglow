@@ -200,7 +200,7 @@ curl http://localhost:5001/health
 ```bash
 curl -X POST http://localhost:5001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@kirei.com","password":"admin123"}'
+  -d '{"email":"admin@suGlow.com","password":"admin123"}'
 ```
 
 ### Test Frontend

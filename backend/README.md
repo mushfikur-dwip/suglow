@@ -83,11 +83,11 @@ The server will start on `http://localhost:5000`
 ## Default Credentials
 
 ### Admin
-- Email: `admin@kirei.com`
+- Email: `admin@suGlow.com`
 - Password: `admin123`
 
 ### Manager
-- Email: `manager@kirei.com`
+- Email: `manager@suGlow.com`
 - Password: `manager123`
 
 ## Database Schema

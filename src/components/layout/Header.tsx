@@ -55,7 +55,7 @@ const Header = () => {
             {/* Logo */}
             <Link to="/" className="flex-shrink-0">
               <h1 className="font-display text-3xl md:text-4xl font-bold text-primary italic">
-                Kirei
+                suGlow
               </h1>
             </Link>
 

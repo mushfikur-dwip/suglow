@@ -13,7 +13,7 @@ const About = () => {
         <section className="bg-pink-soft py-16">
           <div className="container-custom text-center">
             <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-              About Kirei
+              About suGlow
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Your trusted destination for authentic K-Beauty and J-Beauty products in Bangladesh
@@ -30,7 +30,7 @@ const About = () => {
               </h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  Founded in 2020, Kirei was born out of a passion for bringing the best of Korean and Japanese beauty to Bangladesh. The word "Kirei" (綺麗) means "beautiful" in Japanese, reflecting our commitment to helping everyone discover their natural beauty.
+                  Founded in 2020, suGlow was born out of a passion for bringing the best of Korean and Japanese beauty to Bangladesh. The word "suGlow" (綺麗) means "beautiful" in Japanese, reflecting our commitment to helping everyone discover their natural beauty.
                 </p>
                 <p>
                   We started as a small team of beauty enthusiasts who struggled to find authentic K-Beauty and J-Beauty products locally. This challenge inspired us to create a platform where beauty lovers could access genuine, high-quality products at fair prices.

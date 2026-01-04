@@ -38,11 +38,11 @@ const AdminSettings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="siteName">Site Name</Label>
-                    <Input id="siteName" defaultValue="Kirei Cosmetics" />
+                    <Input id="siteName" defaultValue="suGlow Cosmetics" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="siteEmail">Contact Email</Label>
-                    <Input id="siteEmail" type="email" defaultValue="info@kirei.com" />
+                    <Input id="siteEmail" type="email" defaultValue="info@suGlow.com" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>

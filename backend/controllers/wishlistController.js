@@ -3,10 +3,10 @@ import db from '../config/database.js';
 // Get user wishlist
 export const getWishlist = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user.id;
     
     const [wishlistItems] = await db.query(
-      `SELECT w.*, p.name, p.slug, p.price, p.original_price, p.image, p.in_stock 
+      `SELECT w.*, p.name, p.slug, p.price, p.sale_price, p.main_image, p.stock_quantity 
        FROM wishlists w 
        JOIN products p ON w.product_id = p.id 
        WHERE w.user_id = ? 
@@ -27,8 +27,10 @@ export const getWishlist = async (req, res) => {
 // Add to wishlist
 export const addToWishlist = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user.id;
     const { product_id } = req.body;
+    
+    console.log('Add to wishlist request:', { userId, product_id, body: req.body });
     
     if (!product_id) {
       return res.status(400).json({ success: false, message: 'Product ID is required' });
@@ -37,6 +39,7 @@ export const addToWishlist = async (req, res) => {
     // Check if product exists
     const [product] = await db.query('SELECT id FROM products WHERE id = ?', [product_id]);
     if (product.length === 0) {
+      console.log('Product not found:', product_id);
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
     
@@ -47,14 +50,17 @@ export const addToWishlist = async (req, res) => {
     );
     
     if (existing.length > 0) {
+      console.log('Product already in wishlist:', { userId, product_id });
       return res.status(400).json({ success: false, message: 'Product already in wishlist' });
     }
     
     // Add to wishlist
-    await db.query(
+    const [result] = await db.query(
       'INSERT INTO wishlists (user_id, product_id) VALUES (?, ?)',
       [userId, product_id]
     );
+    
+    console.log('Product added to wishlist:', { userId, product_id, insertId: result.insertId });
     
     res.status(201).json({
       success: true,
@@ -69,7 +75,7 @@ export const addToWishlist = async (req, res) => {
 // Remove from wishlist
 export const removeFromWishlist = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user.id;
     const { id } = req.params;
     
     const [result] = await db.query(
@@ -94,8 +100,10 @@ export const removeFromWishlist = async (req, res) => {
 // Check if product is in wishlist
 export const checkWishlist = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user.id;
     const { product_id } = req.params;
+    
+    console.log('Check wishlist:', { userId, product_id });
     
     const [existing] = await db.query(
       'SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?',

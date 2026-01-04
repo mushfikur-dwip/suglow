@@ -86,7 +86,7 @@ const Auth = () => {
             <div className="text-center mb-8">
               <Link to="/" className="inline-block">
                 <h1 className="font-display text-3xl font-bold text-primary">
-                  Kirei
+                  suGlow
                 </h1>
               </Link>
               <p className="text-muted-foreground mt-2">

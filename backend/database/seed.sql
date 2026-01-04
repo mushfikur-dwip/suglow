@@ -2,8 +2,8 @@ USE suglow_db;
 
 -- Insert Default Admin User (password: admin123)
 INSERT INTO users (email, password, first_name, last_name, role, status) VALUES
-('admin@kirei.com', '$2a$10$XQZqQx3z5X5Z5Z5Z5Z5Z5.5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z', 'Admin', 'User', 'admin', 'active'),
-('manager@kirei.com', '$2a$10$XQZqQx3z5X5Z5Z5Z5Z5Z5.5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z', 'Manager', 'User', 'manager', 'active');
+('admin@suGlow.com', '$2a$10$XQZqQx3z5X5Z5Z5Z5Z5Z5.5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z', 'Admin', 'User', 'admin', 'active'),
+('manager@suGlow.com', '$2a$10$XQZqQx3z5X5Z5Z5Z5Z5Z5.5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z', 'Manager', 'User', 'manager', 'active');
 
 -- Note: The password hash above is a placeholder. It will be generated properly when you run the backend
 -- For now, we'll handle admin creation in the backend code during first run

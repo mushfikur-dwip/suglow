@@ -22,7 +22,7 @@ const menuItems = [
   { icon: Shield, label: "Verify Product", path: "/account/verify" },
   { icon: Ticket, label: "My Coupons", path: "/account/coupons" },
   { icon: Heart, label: "My WishList", path: "/account/wishlist" },
-  { icon: Gift, label: "My Rewards", path: "/account/rewards" },
+  // { icon: Gift, label: "My Rewards", path: "/account/rewards" },
 ];
 
 const AccountSidebar = () => {
