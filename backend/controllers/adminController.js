@@ -89,28 +89,51 @@ export const getDashboardStats = async (req, res) => {
 // Get all customers
 export const getCustomers = async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, search, status } = req.query;
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    const [customers] = await db.query(
-      `SELECT 
+    let query = `SELECT 
         u.id, u.email, u.first_name, u.last_name, u.phone, 
         u.reward_points, u.status, u.created_at,
         COUNT(DISTINCT o.id) as order_count,
-        SUM(o.total_amount) as total_spent
+        COALESCE(SUM(o.total_amount), 0) as total_spent
        FROM users u
        LEFT JOIN orders o ON u.id = o.user_id AND o.status != 'cancelled'
-       WHERE u.role = 'customer'
-       GROUP BY u.id
-       ORDER BY u.created_at DESC
-       LIMIT ? OFFSET ?`,
-      [parseInt(limit), offset]
-    );
+       WHERE u.role = 'customer'`;
+    
+    const params = [];
 
-    const [countResult] = await db.query(
-      "SELECT COUNT(*) as total FROM users WHERE role = 'customer'"
-    );
+    if (search) {
+      query += ` AND (u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ? OR u.phone LIKE ?)`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    if (status && status !== 'all') {
+      query += ` AND u.status = ?`;
+      params.push(status);
+    }
+
+    query += ` GROUP BY u.id ORDER BY u.created_at DESC LIMIT ? OFFSET ?`;
+    params.push(parseInt(limit), offset);
+
+    const [customers] = await db.query(query, params);
+
+    // Get total count
+    let countQuery = "SELECT COUNT(*) as total FROM users WHERE role = 'customer'";
+    const countParams = [];
+
+    if (search) {
+      countQuery += ` AND (email LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR phone LIKE ?)`;
+      countParams.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    if (status && status !== 'all') {
+      countQuery += ` AND status = ?`;
+      countParams.push(status);
+    }
+
+    const [[{ total }]] = await db.query(countQuery, countParams);
 
     res.json({
       success: true,
@@ -118,7 +141,8 @@ export const getCustomers = async (req, res) => {
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: countResult[0].total
+        total,
+        pages: Math.ceil(total / limit)
       }
     });
   } catch (error) {
@@ -126,6 +150,136 @@ export const getCustomers = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch customers' 
+    });
+  }
+};
+
+// Get customer statistics
+export const getCustomerStats = async (req, res) => {
+  try {
+    const [stats] = await db.query(`
+      SELECT 
+        COUNT(*) as total_customers,
+        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_customers,
+        SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) as inactive_customers,
+        SUM(reward_points) as total_reward_points
+      FROM users
+      WHERE role = 'customer'
+    `);
+
+    // Get this month's new customers
+    const [[thisMonthStats]] = await db.query(`
+      SELECT COUNT(*) as new_this_month
+      FROM users
+      WHERE role = 'customer'
+      AND MONTH(created_at) = MONTH(CURRENT_DATE())
+      AND YEAR(created_at) = YEAR(CURRENT_DATE())
+    `);
+
+    res.json({
+      success: true,
+      data: {
+        ...stats[0],
+        new_this_month: thisMonthStats.new_this_month || 0
+      }
+    });
+  } catch (error) {
+    console.error('Get customer stats error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch customer statistics' 
+    });
+  }
+};
+
+// Get single customer details
+export const getCustomerDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [[customer]] = await db.query(
+      `SELECT 
+        u.id, u.email, u.first_name, u.last_name, u.phone, 
+        u.reward_points, u.status, u.created_at,
+        COUNT(DISTINCT o.id) as order_count,
+        COALESCE(SUM(o.total_amount), 0) as total_spent
+       FROM users u
+       LEFT JOIN orders o ON u.id = o.user_id AND o.status != 'cancelled'
+       WHERE u.role = 'customer' AND u.id = ?
+       GROUP BY u.id`,
+      [id]
+    );
+
+    if (!customer) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Customer not found' 
+      });
+    }
+
+    // Get customer's recent orders
+    const [orders] = await db.query(
+      `SELECT id, order_number, total_amount, status, created_at
+       FROM orders
+       WHERE user_id = ?
+       ORDER BY created_at DESC
+       LIMIT 10`,
+      [id]
+    );
+
+    // Get customer's addresses
+    const [addresses] = await db.query(
+      `SELECT *
+       FROM addresses
+       WHERE user_id = ?
+       ORDER BY created_at DESC`,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        ...customer,
+        recent_orders: orders,
+        addresses
+      }
+    });
+  } catch (error) {
+    console.error('Get customer details error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch customer details' 
+    });
+  }
+};
+
+// Update customer status
+export const updateCustomerStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['active', 'inactive', 'blocked'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status'
+      });
+    }
+
+    await db.query(
+      'UPDATE users SET status = ? WHERE id = ? AND role = "customer"',
+      [status, id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Customer status updated successfully'
+    });
+  } catch (error) {
+    console.error('Update customer status error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update customer status' 
     });
   }
 };

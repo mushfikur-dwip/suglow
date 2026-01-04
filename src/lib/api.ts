@@ -128,3 +128,10 @@ export const returnsAPI = {
   processRefund: (id) => apiClient.put(`/returns/${id}/refund`),
   cancelRefund: (id) => apiClient.put(`/returns/${id}/cancel`),
 };
+
+export const customersAPI = {
+  getAll: (params) => apiClient.get('/admin/customers', { params }),
+  getStats: () => apiClient.get('/admin/customers/stats'),
+  getDetails: (id) => apiClient.get(`/admin/customers/${id}`),
+  updateStatus: (id, status) => apiClient.put(`/admin/customers/${id}/status`, { status }),
+};

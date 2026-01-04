@@ -2,6 +2,9 @@ import express from 'express';
 import {
   getDashboardStats,
   getCustomers,
+  getCustomerStats,
+  getCustomerDetails,
+  updateCustomerStatus,
   getReviews,
   updateReviewStatus
 } from '../controllers/adminController.js';
@@ -15,6 +18,9 @@ router.use(adminMiddleware);
 
 router.get('/dashboard', getDashboardStats);
 router.get('/customers', getCustomers);
+router.get('/customers/stats', getCustomerStats);
+router.get('/customers/:id', getCustomerDetails);
+router.put('/customers/:id/status', updateCustomerStatus);
 router.get('/reviews', getReviews);
 router.put('/reviews/:id/status', updateReviewStatus);
 
