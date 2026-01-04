@@ -16,6 +16,9 @@ import wishlistRoutes from './routes/wishlist.js';
 import rewardsRoutes from './routes/rewards.js';
 import addressRoutes from './routes/addresses.js';
 import notificationRoutes from './routes/notifications.js';
+import purchaseRoutes from './routes/purchase.js';
+import stockRoutes from './routes/stock.js';
+import reviewRoutes from './routes/reviews.js';
 
 // Import middleware
 import { errorHandler, notFound } from './middleware/errorHandler.js';
@@ -60,6 +63,9 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/purchase', purchaseRoutes);
+app.use('/api/stock', stockRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Error handling
 app.use(notFound);

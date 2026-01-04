@@ -94,3 +94,30 @@ export const wishlistAPI = {
 export const rewardsAPI = {
   getRewards: () => apiClient.get('/rewards'),
 };
+
+export const purchaseAPI = {
+  getAll: (params) => apiClient.get('/purchase', { params }),
+  getById: (id) => apiClient.get(`/purchase/${id}`),
+  getStats: () => apiClient.get('/purchase/stats'),
+  create: (data) => apiClient.post('/purchase', data),
+  updateStatus: (id, data) => apiClient.put(`/purchase/${id}/status`, data),
+  delete: (id) => apiClient.delete(`/purchase/${id}`),
+  getSuppliers: () => apiClient.get('/purchase/suppliers/all'),
+  createSupplier: (data) => apiClient.post('/purchase/suppliers', data),
+  updateSupplier: (id, data) => apiClient.put(`/purchase/suppliers/${id}`, data),
+};
+
+export const stockAPI = {
+  getAll: (params) => apiClient.get('/stock', { params }),
+  getStats: () => apiClient.get('/stock/stats'),
+  update: (id, data) => apiClient.put(`/stock/${id}`, data),
+  bulkUpdate: (updates) => apiClient.put('/stock/bulk/update', { updates }),
+};
+
+export const reviewsAPI = {
+  getAll: (params) => apiClient.get('/reviews', { params }),
+  getStats: () => apiClient.get('/reviews/stats'),
+  updateStatus: (id, status) => apiClient.put(`/reviews/${id}/status`, { status }),
+  delete: (id) => apiClient.delete(`/reviews/${id}`),
+  bulkUpdateStatus: (review_ids, status) => apiClient.put('/reviews/bulk/status', { review_ids, status }),
+};

@@ -4,14 +4,10 @@ import {
   LayoutDashboard,
   Package,
   ShoppingCart,
-  AlertTriangle,
   Warehouse,
   Star,
   Monitor,
   ClipboardList,
-  Globe,
-  RotateCcw,
-  RefreshCw,
   Ticket,
   Gift,
   Users,
@@ -47,7 +43,6 @@ const menuGroups: MenuGroup[] = [
     items: [
       { icon: Package, label: "Products", path: "/admin/products" },
       { icon: ShoppingCart, label: "Purchase", path: "/admin/purchase" },
-      { icon: AlertTriangle, label: "Damages", path: "/admin/damages" },
       { icon: Warehouse, label: "Stock", path: "/admin/stock" },
       { icon: Star, label: "Reviews", path: "/admin/reviews" },
     ],
@@ -56,10 +51,16 @@ const menuGroups: MenuGroup[] = [
     title: "POS & ORDERS",
     items: [
       { icon: Monitor, label: "POS", path: "/admin/pos" },
-      { icon: ClipboardList, label: "POS Orders", path: "/admin/pos-orders" },
-      { icon: Globe, label: "Online Orders", path: "/admin/online-orders" },
-      { icon: RotateCcw, label: "Return Orders", path: "/admin/return-orders" },
-      { icon: RefreshCw, label: "Return And Refunds", path: "/admin/refunds" },
+      { 
+        icon: ClipboardList, 
+        label: "Order Management",
+        children: [
+          { label: "Online Orders", path: "/admin/online-orders" },
+          { label: "POS Orders", path: "/admin/pos-orders" },
+          { label: "Return Orders", path: "/admin/return-orders" },
+          { label: "Return And Refunds", path: "/admin/refunds" },
+        ],
+      },
     ],
   },
   {
