@@ -14,15 +14,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Loader2 } from "lucide-react";
-import { useProduct, useUpdateProduct } from "@/hooks/useProducts";
+import { ArrowLeft, Loader2, Upload, X } from "lucide-react";
+import { useProductById, useUpdateProduct } from "@/hooks/useProducts";
 import { toast } from "sonner";
 
 const AdminEditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: product, isLoading } = useProduct(Number(id));
+  const { data: productData, isLoading } = useProductById(Number(id));
   const updateProductMutation = useUpdateProduct();
+
+  const product = productData?.data;
 
   const [formData, setFormData] = useState({
     sku: "",
@@ -38,10 +40,13 @@ const AdminEditProduct = () => {
     main_image: "",
     featured: false,
     trending: false,
+    best_seller: false,
+    new_arrival: false,
     status: "active",
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
 
   useEffect(() => {
     if (product) {
@@ -59,8 +64,11 @@ const AdminEditProduct = () => {
         main_image: product.main_image || "",
         featured: product.featured === 1,
         trending: product.trending === 1,
+        best_seller: product.best_seller === 1,
+        new_arrival: product.new_arrival === 1,
         status: product.status || "active",
       });
+      setImagePreview(product.main_image || "");
     }
   }, [product]);
 
@@ -79,8 +87,21 @@ const AdminEditProduct = () => {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(formData.main_image);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,6 +109,11 @@ const AdminEditProduct = () => {
 
     if (!formData.name || !formData.sku || !formData.category_id || !formData.price) {
       toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (formData.sale_price && parseFloat(formData.sale_price) >= parseFloat(formData.price)) {
+      toast.error("Sale price must be less than regular price");
       return;
     }
 
@@ -104,6 +130,8 @@ const AdminEditProduct = () => {
     submitData.append("stock_quantity", formData.stock_quantity);
     submitData.append("featured", formData.featured ? "1" : "0");
     submitData.append("trending", formData.trending ? "1" : "0");
+    submitData.append("best_seller", formData.best_seller ? "1" : "0");
+    submitData.append("new_arrival", formData.new_arrival ? "1" : "0");
     submitData.append("status", formData.status);
 
     if (imageFile) {
@@ -131,6 +159,19 @@ const AdminEditProduct = () => {
       <AdminLayout>
         <div className="flex justify-center items-center h-96">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!product) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col justify-center items-center h-96 space-y-4">
+          <p className="text-xl text-muted-foreground">Product not found</p>
+          <Button onClick={() => navigate("/admin/products")}>
+            Back to Products
+          </Button>
         </div>
       </AdminLayout>
     );
@@ -290,12 +331,25 @@ const AdminEditProduct = () => {
                   <CardTitle>Product Image</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {formData.main_image && !imageFile && (
-                    <img
-                      src={formData.main_image}
-                      alt="Current"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
+                  {imagePreview && (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                      {imageFile && (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={handleRemoveImage}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   )}
                   <div className="space-y-2">
                     <Label htmlFor="image">Upload New Image</Label>
@@ -304,15 +358,32 @@ const AdminEditProduct = () => {
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
+                      className="cursor-pointer"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Recommended: 800x800px, Max 2MB
+                    </p>
                   </div>
-                  <div className="text-sm text-muted-foreground text-center">OR</div>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or use URL
+                      </span>
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="image_url">Image URL</Label>
                     <Input
                       id="image_url"
                       value={formData.main_image}
-                      onChange={(e) => handleInputChange("main_image", e.target.value)}
+                      onChange={(e) => {
+                        handleInputChange("main_image", e.target.value);
+                        setImagePreview(e.target.value);
+                      }}
+                      placeholder="https://example.com/image.jpg"
                     />
                   </div>
                 </CardContent>
@@ -343,21 +414,43 @@ const AdminEditProduct = () => {
                       Trending Product
                     </Label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="best_seller"
+                      checked={formData.best_seller}
+                      onCheckedChange={(checked) => handleInputChange("best_seller", checked as boolean)}
+                    />
+                    <Label htmlFor="best_seller" className="cursor-pointer">
+                      Best Seller
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="new_arrival"
+                      checked={formData.new_arrival}
+                      onCheckedChange={(checked) => handleInputChange("new_arrival", checked as boolean)}
+                    />
+                    <Label htmlFor="new_arrival" className="cursor-pointer">
+                      New Arrival
+                    </Label>
+                  </div>
 
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) => handleInputChange("status", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background">
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="pt-2 border-t">
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select
+                        value={formData.status}
+                        onValueChange={(value) => handleInputChange("status", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background">
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

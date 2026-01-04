@@ -11,6 +11,7 @@ interface ProductFilters {
   trending?: boolean;
   bestSeller?: boolean;
   newArrival?: boolean;
+  status?: string; // Added for admin panel
   sort?: string;
   order?: 'ASC' | 'DESC';
   page?: number;
@@ -30,6 +31,14 @@ export const useProduct = (slug: string) => {
     queryKey: ['product', slug],
     queryFn: () => productsAPI.getBySlug(slug),
     enabled: !!slug,
+  });
+};
+
+export const useProductById = (id: number) => {
+  return useQuery({
+    queryKey: ['product', 'id', id],
+    queryFn: () => productsAPI.getById(id),
+    enabled: !!id,
   });
 };
 

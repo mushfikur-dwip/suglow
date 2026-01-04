@@ -54,7 +54,8 @@ export const authAPI = {
 
 export const productsAPI = {
   getAll: (params) => apiClient.get('/products', { params }),
-  getBySlug: (slug) => apiClient.get(`/products/${slug}`),
+  getBySlug: (slug) => apiClient.get(`/products/by-slug/${slug}`),
+  getById: (id) => apiClient.get(`/products/${id}`),
   create: (data) => apiClient.post('/products', data),
   update: (id, data) => apiClient.put(`/products/${id}`, data),
   delete: (id) => apiClient.delete(`/products/${id}`),

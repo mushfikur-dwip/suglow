@@ -20,8 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Edit, Trash2, Eye, Loader2 } from "lucide-react";
-// import { useProducts } from "@/hooks/useAdmin/products/useProducts";
-// import { useDeleteProduct } from "@/hooks/useAdmin/products/useDeleteProduct";
+import { useProducts, useDeleteProduct } from "@/hooks/useProducts";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -41,6 +40,7 @@ const AdminProducts = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteProductId, setDeleteProductId] = useState<number | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
 
   const { data: productsData, isLoading } = useProducts({
     search: searchQuery,
@@ -64,6 +64,39 @@ const AdminProducts = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedProducts.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedProducts.length} products?`)) {
+      return;
+    }
+
+    for (const id of selectedProducts) {
+      try {
+        await deleteProductMutation.mutateAsync(id);
+      } catch (error) {
+        console.error('Failed to delete product:', id);
+      }
+    }
+    
+    toast.success(`${selectedProducts.length} products deleted successfully`);
+    setSelectedProducts([]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProducts.length === productsData?.data?.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(productsData?.data?.map((p: any) => p.id) || []);
+    }
+  };
+
+  const toggleSelectProduct = (id: number) => {
+    setSelectedProducts(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    )
+  };
+
   const getStatusBadge = (status: string, stock: number) => {
     if (stock === 0) {
       return <Badge variant="destructive">Out of Stock</Badge>;
@@ -78,13 +111,25 @@ const AdminProducts = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl font-bold text-foreground">Products</h1>
-          <Button 
-            className="bg-primary hover:bg-primary/90"
-            onClick={() => navigate("/admin/products/add")}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Product
-          </Button>
+          <div className="flex gap-2">
+            {selectedProducts.length > 0 && (
+              <Button 
+                variant="destructive"
+                onClick={handleBulkDelete}
+                disabled={deleteProductMutation.isPending}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete ({selectedProducts.length})
+              </Button>
+            )}
+            <Button 
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => navigate("/admin/products/add")}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -135,6 +180,14 @@ const AdminProducts = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedProducts.length === productsData?.data?.length && productsData?.data?.length > 0}
+                          onChange={toggleSelectAll}
+                          className="cursor-pointer w-4 h-4"
+                        />
+                      </TableHead>
                       <TableHead>Product</TableHead>
                       <TableHead>SKU</TableHead>
                       <TableHead>Brand</TableHead>
@@ -145,15 +198,23 @@ const AdminProducts = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {productsData?.products?.length === 0 ? (
+                    {productsData?.data?.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           No products found
                         </TableCell>
                       </TableRow>
                     ) : (
-                      productsData?.products?.map((product: any) => (
+                      productsData?.data?.map((product: any) => (
                         <TableRow key={product.id}>
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={selectedProducts.includes(product.id)}
+                              onChange={() => toggleSelectProduct(product.id)}
+                              className="cursor-pointer w-4 h-4"
+                            />
+                          </TableCell>
                           <TableCell className="font-medium">{product.name}</TableCell>
                           <TableCell>{product.sku}</TableCell>
                           <TableCell>{product.brand}</TableCell>

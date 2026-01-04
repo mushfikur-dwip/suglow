@@ -16,16 +16,27 @@ export const getProducts = async (req, res) => {
       sort = 'created_at',
       order = 'DESC',
       page = 1,
-      limit = 12
+      limit = 12,
+      status // Added status filter for admin panel
     } = req.query;
 
     let query = `
       SELECT p.*, c.name as category_name 
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.status = 'active'
+      WHERE 1=1
     `;
     const params = [];
+
+    // Apply status filter - if not provided, show only active (for customer-facing pages)
+    // If status is provided, filter by that status (for admin panel)
+    if (status) {
+      query += ' AND p.status = ?';
+      params.push(status);
+    } else if (!req.path.includes('admin')) {
+      // Only filter by active status for customer-facing routes
+      query += ' AND p.status = "active"';
+    }
 
     // Apply filters
     if (category) {
@@ -78,8 +89,16 @@ export const getProducts = async (req, res) => {
       SELECT COUNT(*) as total 
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.status = 'active'
+      WHERE 1=1
     `;
+    
+    // Apply same status filter to count query
+    if (status) {
+      countQuery += ' AND p.status = ?';
+    } else if (!req.path.includes('admin')) {
+      countQuery += ' AND p.status = "active"';
+    }
+    
     const countParams = params.slice(0, -2); // Remove limit and offset
     
     const [products] = await db.query(query, params);
@@ -101,6 +120,39 @@ export const getProducts = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch products' 
+    });
+  }
+};
+
+// Get single product by ID (Admin only - for editing)
+export const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [products] = await db.query(
+      `SELECT p.*, c.name as category_name, c.slug as category_slug 
+       FROM products p
+       LEFT JOIN categories c ON p.category_id = c.id
+       WHERE p.id = ?`,
+      [id]
+    );
+
+    if (products.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Product not found' 
+      });
+    }
+
+    res.json({
+      success: true,
+      data: products[0]
+    });
+  } catch (error) {
+    console.error('Get product by ID error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch product' 
     });
   }
 };
@@ -190,21 +242,25 @@ export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      name, description, shortDescription, categoryId, brand,
-      price, salePrice, stockQuantity, mainImage, featured,
-      trending, bestSeller, newArrival, status
+      sku, name, slug, description, short_description, category_id, brand,
+      price, sale_price, stock_quantity, main_image, main_image_url, 
+      featured, trending, best_seller, new_arrival, status
     } = req.body;
+
+    // Use main_image_url if no file uploaded
+    const imageUrl = main_image || main_image_url;
 
     await db.query(
       `UPDATE products SET 
-       name = ?, description = ?, short_description = ?, category_id = ?,
-       brand = ?, price = ?, sale_price = ?, stock_quantity = ?,
+       sku = ?, name = ?, slug = ?, description = ?, short_description = ?, 
+       category_id = ?, brand = ?, price = ?, sale_price = ?, stock_quantity = ?,
        main_image = ?, featured = ?, trending = ?, best_seller = ?,
        new_arrival = ?, status = ?
        WHERE id = ?`,
-      [name, description, shortDescription, categoryId, brand, price,
-       salePrice, stockQuantity, mainImage, featured, trending,
-       bestSeller, newArrival, status, id]
+      [sku, name, slug, description, short_description, category_id, brand, 
+       price, sale_price || null, stock_quantity, imageUrl, 
+       featured || 0, trending || 0, best_seller || 0, new_arrival || 0, 
+       status, id]
     );
 
     res.json({
@@ -225,6 +281,27 @@ export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Check if product is referenced in orders
+    const [orderItems] = await db.query(
+      'SELECT COUNT(*) as count FROM order_items WHERE product_id = ?',
+      [id]
+    );
+
+    if (orderItems[0].count > 0) {
+      // Soft delete - mark as inactive instead of deleting
+      await db.query(
+        'UPDATE products SET status = ? WHERE id = ?',
+        ['inactive', id]
+      );
+
+      return res.json({
+        success: true,
+        message: 'Product deactivated successfully (product is linked to existing orders)',
+        softDelete: true
+      });
+    }
+
+    // If not referenced, hard delete
     await db.query('DELETE FROM products WHERE id = ?', [id]);
 
     res.json({
