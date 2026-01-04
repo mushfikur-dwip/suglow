@@ -1,4 +1,5 @@
 import db from '../config/database.js';
+import bcrypt from 'bcryptjs';
 
 // Get dashboard statistics
 export const getDashboardStats = async (req, res) => {
@@ -249,6 +250,133 @@ export const getCustomerDetails = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch customer details' 
+    });
+  }
+};
+
+// Create new customer
+export const createCustomer = async (req, res) => {
+  try {
+    const { 
+      first_name, 
+      last_name, 
+      email, 
+      phone, 
+      password,
+      status = 'active'
+    } = req.body;
+
+    // Validate required fields
+    if (!first_name || !last_name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'First name, last name, email, and password are required'
+      });
+    }
+
+    // Check if email already exists
+    const [[existingUser]] = await db.query(
+      'SELECT id FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already exists'
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert new customer
+    const [result] = await db.query(
+      `INSERT INTO users (first_name, last_name, email, phone, password, role, status, created_at)
+       VALUES (?, ?, ?, ?, ?, 'customer', ?, NOW())`,
+      [first_name, last_name, email, phone || null, hashedPassword, status]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Customer created successfully',
+      data: { id: result.insertId }
+    });
+  } catch (error) {
+    console.error('Create customer error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to create customer' 
+    });
+  }
+};
+
+// Update customer
+export const updateCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { 
+      first_name, 
+      last_name, 
+      email, 
+      phone, 
+      password,
+      status
+    } = req.body;
+
+    // Validate required fields
+    if (!first_name || !last_name || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'First name, last name, and email are required'
+      });
+    }
+
+    // Check if email exists for another user
+    const [[existingUser]] = await db.query(
+      'SELECT id FROM users WHERE email = ? AND id != ?',
+      [email, id]
+    );
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already exists'
+      });
+    }
+
+    // Build update query
+    let updateFields = ['first_name = ?', 'last_name = ?', 'email = ?', 'phone = ?'];
+    let updateParams = [first_name, last_name, email, phone || null];
+
+    if (status && ['active', 'inactive', 'blocked'].includes(status)) {
+      updateFields.push('status = ?');
+      updateParams.push(status);
+    }
+
+    // If password is provided, hash and update it
+    if (password && password.trim() !== '') {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateFields.push('password = ?');
+      updateParams.push(hashedPassword);
+    }
+
+    updateParams.push(id);
+
+    await db.query(
+      `UPDATE users SET ${updateFields.join(', ')} WHERE id = ? AND role = "customer"`,
+      updateParams
+    );
+
+    res.json({
+      success: true,
+      message: 'Customer updated successfully'
+    });
+  } catch (error) {
+    console.error('Update customer error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update customer' 
     });
   }
 };

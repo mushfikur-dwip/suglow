@@ -133,5 +133,7 @@ export const customersAPI = {
   getAll: (params) => apiClient.get('/admin/customers', { params }),
   getStats: () => apiClient.get('/admin/customers/stats'),
   getDetails: (id) => apiClient.get(`/admin/customers/${id}`),
+  create: (data) => apiClient.post('/admin/customers', data),
+  update: (id, data) => apiClient.put(`/admin/customers/${id}`, data),
   updateStatus: (id, status) => apiClient.put(`/admin/customers/${id}/status`, { status }),
 };

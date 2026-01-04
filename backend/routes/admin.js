@@ -4,6 +4,8 @@ import {
   getCustomers,
   getCustomerStats,
   getCustomerDetails,
+  createCustomer,
+  updateCustomer,
   updateCustomerStatus,
   getReviews,
   updateReviewStatus
@@ -19,7 +21,9 @@ router.use(adminMiddleware);
 router.get('/dashboard', getDashboardStats);
 router.get('/customers', getCustomers);
 router.get('/customers/stats', getCustomerStats);
+router.post('/customers', createCustomer);
 router.get('/customers/:id', getCustomerDetails);
+router.put('/customers/:id', updateCustomer);
 router.put('/customers/:id/status', updateCustomerStatus);
 router.get('/reviews', getReviews);
 router.put('/reviews/:id/status', updateReviewStatus);

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -36,9 +38,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Eye, Users, UserCheck, UserX, Award, Loader2, ShoppingBag, MapPin } from "lucide-react";
+import { Search, Eye, Users, UserCheck, UserX, Award, Loader2, ShoppingBag, MapPin, Plus, Edit } from "lucide-react";
 import AdminStatCard from "@/components/admin/AdminStatCard";
-import { useCustomers, useCustomerStats, useCustomerDetails, useUpdateCustomerStatus } from "@/hooks/useCustomers";
+import { useCustomers, useCustomerStats, useCustomerDetails, useCreateCustomer, useUpdateCustomer, useUpdateCustomerStatus } from "@/hooks/useCustomers";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -56,8 +58,19 @@ const AdminCustomers = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [viewDialog, setViewDialog] = useState(false);
+  const [formDialog, setFormDialog] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [statusDialog, setStatusDialog] = useState<any>(null);
   const [newStatus, setNewStatus] = useState("");
+  
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    password: "",
+    status: "active"
+  });
 
   const { data: customersData, isLoading } = useCustomers({
     search: searchQuery,
@@ -66,6 +79,8 @@ const AdminCustomers = () => {
 
   const { data: statsData } = useCustomerStats();
   const { data: customerDetailsData } = useCustomerDetails(selectedCustomer?.id);
+  const createMutation = useCreateCustomer();
+  const updateMutation = useUpdateCustomer();
   const updateStatusMutation = useUpdateCustomerStatus();
 
   const customers = customersData?.data || [];
@@ -74,6 +89,87 @@ const AdminCustomers = () => {
   const handleViewCustomer = (customer: any) => {
     setSelectedCustomer(customer);
     setViewDialog(true);
+  };
+
+  const handleAddCustomer = () => {
+    setEditMode(false);
+    setFormData({
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone: "",
+      password: "",
+      status: "active"
+    });
+    setFormDialog(true);
+  };
+
+  const handleEditCustomer = (customer: any) => {
+    setEditMode(true);
+    setSelectedCustomer(customer);
+    setFormData({
+      first_name: customer.first_name,
+      last_name: customer.last_name,
+      email: customer.email,
+      phone: customer.phone || "",
+      password: "", // Don't pre-fill password
+      status: customer.status
+    });
+    setFormDialog(true);
+  };
+
+  const handleSubmit = () => {
+    // Validate required fields
+    if (!formData.first_name || !formData.last_name || !formData.email) {
+      toast.error("First name, last name, and email are required");
+      return;
+    }
+
+    if (!editMode && !formData.password) {
+      toast.error("Password is required for new customers");
+      return;
+    }
+
+    if (editMode) {
+      // Update existing customer
+      const updateData: any = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        phone: formData.phone,
+        status: formData.status,
+      };
+
+      // Only include password if it's been changed
+      if (formData.password && formData.password.trim() !== "") {
+        updateData.password = formData.password;
+      }
+
+      updateMutation.mutate(
+        { id: selectedCustomer.id, data: updateData },
+        {
+          onSuccess: () => {
+            toast.success("Customer updated successfully");
+            setFormDialog(false);
+            setSelectedCustomer(null);
+          },
+          onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to update customer");
+          },
+        }
+      );
+    } else {
+      // Create new customer
+      createMutation.mutate(formData, {
+        onSuccess: () => {
+          toast.success("Customer created successfully");
+          setFormDialog(false);
+        },
+        onError: (error: any) => {
+          toast.error(error.response?.data?.message || "Failed to create customer");
+        },
+      });
+    }
   };
 
   const handleUpdateStatus = () => {
@@ -110,6 +206,10 @@ const AdminCustomers = () => {
             <h1 className="text-2xl font-bold text-foreground">Customers</h1>
             <p className="text-muted-foreground">Manage your customer database</p>
           </div>
+          <Button onClick={handleAddCustomer}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Customer
+          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -246,6 +346,14 @@ const AdminCustomers = () => {
                             >
                               <Eye className="h-4 w-4 mr-1" />
                               View
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditCustomer(customer)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
                             </Button>
                             <Button
                               variant="ghost"
@@ -458,6 +566,140 @@ const AdminCustomers = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Add/Edit Customer Dialog */}
+        <Dialog open={formDialog} onOpenChange={setFormDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {editMode ? "Edit Customer" : "Add New Customer"}
+              </DialogTitle>
+              <DialogDescription>
+                {editMode
+                  ? "Update customer information. Leave password blank to keep current password."
+                  : "Enter customer details to create a new account."}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">
+                    First Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, first_name: e.target.value })
+                    }
+                    placeholder="John"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">
+                    Last Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, last_name: e.target.value })
+                    }
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">
+                  Email <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="john@example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="+880 1234567890"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">
+                  Password {!editMode && <span className="text-red-500">*</span>}
+                  {editMode && (
+                    <span className="text-muted-foreground text-sm ml-2">
+                      (leave blank to keep current)
+                    </span>
+                  )}
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, status: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="blocked">Blocked</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setFormDialog(false)}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? "Saving..."
+                  : editMode
+                  ? "Update Customer"
+                  : "Create Customer"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
