@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://orange-rook-646425.hostingersite.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://orange-rook-646425.hostingersite.com/api';
 
 const apiClient = axios.create({
   baseURL: API_URL,

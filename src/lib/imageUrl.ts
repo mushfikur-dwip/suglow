@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://orange-rook-646425.hostingersite.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://orange-rook-646425.hostingersite.com';
 
 export const getImageUrl = (imagePath: string | null | undefined): string => {
   if (!imagePath) {

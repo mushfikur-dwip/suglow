@@ -193,12 +193,12 @@ npm run dev
 
 2. Test health endpoint:
 ```bash
-curl http://orange-rook-646425.hostingersite.com/health
+curl https://orange-rook-646425.hostingersite.com/health
 ```
 
 3. Test admin login:
 ```bash
-curl -X POST http://orange-rook-646425.hostingersite.com/api/auth/login \
+curl -X POST https://orange-rook-646425.hostingersite.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@suGlow.com","password":"admin123"}'
 ```
