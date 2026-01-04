@@ -52,8 +52,22 @@ export const useRegister = () => {
 export const useProfile = () => {
   return useQuery({
     queryKey: ['profile'],
-    queryFn: authAPI.getProfile,
+    queryFn: async () => {
+      try {
+        console.log('🔍 Fetching profile...');
+        const result = await authAPI.getProfile();
+        console.log('✅ Profile loaded:', result);
+        return result;
+      } catch (error) {
+        console.log('❌ Profile fetch error:', error);
+        // Return empty data instead of throwing
+        return null;
+      }
+    },
     enabled: !!localStorage.getItem('auth_token'),
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 

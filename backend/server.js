@@ -14,6 +14,8 @@ import orderRoutes from './routes/orders.js';
 import adminRoutes from './routes/admin.js';
 import wishlistRoutes from './routes/wishlist.js';
 import rewardsRoutes from './routes/rewards.js';
+import addressRoutes from './routes/addresses.js';
+import notificationRoutes from './routes/notifications.js';
 
 // Import middleware
 import { errorHandler, notFound } from './middleware/errorHandler.js';
@@ -56,6 +58,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/rewards', rewardsRoutes);
+app.use('/api/addresses', addressRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handling
 app.use(notFound);

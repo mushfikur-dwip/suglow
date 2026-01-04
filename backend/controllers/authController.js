@@ -1,6 +1,8 @@
 import db from '../config/database.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import path from 'path';
+import { deleteOldProfilePicture } from '../middleware/uploadMiddleware.js';
 
 // Register new user
 export const register = async (req, res) => {
@@ -122,7 +124,7 @@ export const login = async (req, res) => {
 export const getProfile = async (req, res) => {
   try {
     const [users] = await db.query(
-      'SELECT id, email, first_name, last_name, phone, role, reward_points, created_at FROM users WHERE id = ?',
+      'SELECT id, email, first_name, last_name, phone, role, reward_points, profile_picture, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -133,9 +135,16 @@ export const getProfile = async (req, res) => {
       });
     }
 
+    const user = users[0];
+    
+    // Add full URL for profile picture
+    if (user.profile_picture) {
+      user.profile_picture = `${process.env.BACKEND_URL || 'http://localhost:5001'}/uploads/profiles/${user.profile_picture}`;
+    }
+
     res.json({
       success: true,
-      data: users[0]
+      data: user
     });
   } catch (error) {
     console.error('Get profile error:', error);
@@ -165,6 +174,53 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Failed to update profile' 
+    });
+  }
+};
+
+// Upload profile picture
+export const uploadProfilePicture = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No file uploaded' 
+      });
+    }
+
+    // Get old profile picture
+    const [users] = await db.query(
+      'SELECT profile_picture FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (users.length > 0 && users[0].profile_picture) {
+      // Delete old file
+      const oldFilePath = path.join('public/uploads/profiles', users[0].profile_picture);
+      deleteOldProfilePicture(oldFilePath);
+    }
+
+    // Update database with new filename
+    const filename = req.file.filename;
+    await db.query(
+      'UPDATE users SET profile_picture = ? WHERE id = ?',
+      [filename, req.user.id]
+    );
+
+    const profilePictureUrl = `${process.env.BACKEND_URL || 'http://localhost:5001'}/uploads/profiles/${filename}`;
+
+    res.json({
+      success: true,
+      message: 'Profile picture uploaded successfully',
+      data: {
+        profilePicture: profilePictureUrl
+      }
+    });
+  } catch (error) {
+    console.error('Upload profile picture error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to upload profile picture' 
     });
   }
 };

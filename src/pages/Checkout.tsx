@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -6,25 +6,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCart } from "@/hooks/useCart";
 import { useCreateOrder } from "@/hooks/useOrders";
+import { useAddresses } from "@/hooks/useAddresses";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { data: cartData, isLoading: loadingCart } = useCart();
+  const { data: addressesData, isError: addressesError } = useAddresses();
   const createOrderMutation = useCreateOrder();
+
+  console.log('🛒 Checkout Page Data:', {
+    cartData,
+    addressesData,
+    loadingCart,
+    addressesError
+  });
 
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [sameAsShipping, setSameAsShipping] = useState(true);
   const [notes, setNotes] = useState("");
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
 
-  // Get coupon from localStorage if applied in cart
-  const savedCoupon = localStorage.getItem('appliedCoupon');
-  const [appliedCoupon, setAppliedCoupon] = useState<{code: string; discount: number; type: 'percentage' | 'fixed'} | null>(
-    savedCoupon ? JSON.parse(savedCoupon) : null
-  );
+  // Coupon state - no auto-apply from localStorage
+  const [appliedCoupon, setAppliedCoupon] = useState<{code: string; discount: number; type: 'percentage' | 'fixed'} | null>(null);
+
+  // Clear appliedCoupon from localStorage when component unmounts
+  useEffect(() => {
+    return () => {
+      localStorage.removeItem('appliedCoupon');
+    };
+  }, []);
 
   // Shipping address state
   const [shippingAddress, setShippingAddress] = useState({
@@ -38,6 +53,62 @@ const Checkout = () => {
     postalCode: "",
     country: "Bangladesh",
   });
+
+  // Auto-select default address on mount
+  useEffect(() => {
+    console.log('🔍 Checking for default address...', { addressesData, selectedAddressId });
+    if (addressesData && addressesData.length > 0 && !selectedAddressId) {
+      const defaultAddress = addressesData.find((addr: any) => addr.is_default === 1);
+      console.log('🌟 Default address found:', defaultAddress);
+      if (defaultAddress) {
+        console.log('✅ Auto-selecting default address ID:', defaultAddress.id);
+        setSelectedAddressId(defaultAddress.id.toString());
+      }
+    }
+  }, [addressesData]);
+
+  // Auto-fill address when saved address is selected
+  useEffect(() => {
+    console.log('🏠 Address selection effect triggered:', selectedAddressId);
+    console.log('📦 addressesData type:', Array.isArray(addressesData), addressesData);
+    if (selectedAddressId && selectedAddressId !== "new" && addressesData) {
+      const dataArray = Array.isArray(addressesData) ? addressesData : addressesData.data;
+      console.log('📋 Data array:', dataArray);
+      const selectedAddress = dataArray?.find(
+        (addr: any) => addr.id.toString() === selectedAddressId
+      );
+      console.log('🔎 Selected address found:', selectedAddress);
+      if (selectedAddress) {
+        const newAddress = {
+          firstName: selectedAddress.first_name || "",
+          lastName: selectedAddress.last_name || "",
+          email: selectedAddress.email || "",
+          phone: selectedAddress.phone || "",
+          address: selectedAddress.address_line1 || "",
+          city: selectedAddress.city || "",
+          district: selectedAddress.state || "",
+          postalCode: selectedAddress.postal_code || "",
+          country: selectedAddress.country || "Bangladesh",
+        };
+        console.log('✏️ Setting address from saved:', newAddress);
+        setShippingAddress(newAddress);
+      }
+    } else if (selectedAddressId === "new") {
+      console.log('🆕 Clearing form for new address');
+      // Clear form when selecting "Enter new address"
+      setShippingAddress({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        district: "",
+        postalCode: "",
+        country: "Bangladesh",
+      });
+    }
+  }, [selectedAddressId, addressesData]);
 
   // Billing address state
   const [billingAddress, setBillingAddress] = useState({
@@ -184,6 +255,27 @@ const Checkout = () => {
                 <h2 className="font-display text-lg font-semibold text-foreground mb-6">
                   Shipping Information
                 </h2>
+
+                {/* Saved Address Selector */}
+                {addressesData?.data && addressesData.data.length > 0 && (
+                  <div className="mb-6">
+                    <Label htmlFor="savedAddress">Use Saved Address</Label>
+                    <Select value={selectedAddressId} onValueChange={setSelectedAddressId}>
+                      <SelectTrigger id="savedAddress">
+                        <SelectValue placeholder="Select a saved address" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new">Enter new address</SelectItem>
+                        {addressesData.data.map((address: any) => (
+                          <SelectItem key={address.id} value={address.id.toString()}>
+                            {address.first_name} {address.last_name} - {address.address_line1}, {address.city}
+                            {address.is_default && " (Default)"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">

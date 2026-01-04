@@ -33,7 +33,8 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     if (token && storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        // Only allow admin and manager roles
+        // Only set admin/manager users in this context
+        // Don't remove customer tokens - they use different auth context
         if (parsed.role === 'admin' || parsed.role === 'manager') {
           setUser({
             id: parsed.id.toString(),
@@ -41,13 +42,11 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
             name: `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || parsed.email,
             role: parsed.role
           });
-        } else {
-          localStorage.removeItem(STORAGE_KEY);
-          localStorage.removeItem(USER_KEY);
         }
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(USER_KEY);
+        // If customer, just ignore - don't remove their token
+      } catch (error) {
+        // Only remove if parsing fails, not if role doesn't match
+        console.error('Failed to parse stored user:', error);
       }
     }
     setIsLoading(false);

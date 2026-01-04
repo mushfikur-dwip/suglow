@@ -18,11 +18,14 @@ import About from "./pages/About";
 import FAQ from "./pages/FAQ";
 import Dashboard from "./pages/account/Dashboard";
 import MyOrders from "./pages/account/MyOrders";
+import OrderDetails from "./pages/account/OrderDetails";
 import AccountDetails from "./pages/account/AccountDetails";
 import VerifyProduct from "./pages/account/VerifyProduct";
 import MyCoupons from "./pages/account/MyCoupons";
 import MyWishlist from "./pages/account/MyWishlist";
 import MyRewards from "./pages/account/MyRewards";
+import SavedAddresses from "./pages/account/SavedAddresses";
+import NotificationSettings from "./pages/account/NotificationSettings";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages
@@ -67,11 +70,14 @@ const App = () => (
             <Route path="/account" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/account/my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
             <Route path="/account/orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
+            <Route path="/account/orders/:id" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
             <Route path="/account/details" element={<ProtectedRoute><AccountDetails /></ProtectedRoute>} />
             <Route path="/account/verify" element={<ProtectedRoute><VerifyProduct /></ProtectedRoute>} />
             <Route path="/account/coupons" element={<ProtectedRoute><MyCoupons /></ProtectedRoute>} />
             <Route path="/account/wishlist" element={<ProtectedRoute><MyWishlist /></ProtectedRoute>} />
             <Route path="/account/rewards" element={<ProtectedRoute><MyRewards /></ProtectedRoute>} />
+            <Route path="/account/addresses" element={<ProtectedRoute><SavedAddresses /></ProtectedRoute>} />
+            <Route path="/account/notifications" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
             
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />

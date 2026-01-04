@@ -1,15 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AccountLayout from "@/components/account/AccountLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile, useUpdateProfile } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { useUploadProfilePicture } from "@/hooks/useProfilePicture";
+import { Loader2, Camera } from "lucide-react";
 import { toast } from "sonner";
 
 const AccountDetails = () => {
   const { data: profile, isLoading } = useProfile();
   const updateProfileMutation = useUpdateProfile();
+  const uploadProfilePicture = useUploadProfilePicture();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -37,6 +41,29 @@ const AccountDetails = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleProfilePictureClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    await uploadProfilePicture.mutateAsync(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -98,6 +125,48 @@ const AccountDetails = () => {
   return (
     <AccountLayout title="Account Details" breadcrumb="Account Details">
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Profile Picture */}
+        <div>
+          <h3 className="font-medium text-foreground mb-4">Profile Picture</h3>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Avatar className="w-24 h-24">
+                <AvatarImage src={profile?.profile_picture} alt={profile?.first_name} />
+                <AvatarFallback className="text-2xl">
+                  {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                type="button"
+                onClick={handleProfilePictureClick}
+                disabled={uploadProfilePicture.isPending}
+                className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-2 hover:bg-primary/90 transition disabled:opacity-50"
+              >
+                {uploadProfilePicture.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">
+                Upload a new profile picture. Max file size: 5MB
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Supported formats: JPG, PNG, GIF, WEBP
+              </p>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleProfilePictureChange}
+              className="hidden"
+            />
+          </div>
+        </div>
+
         {/* Personal Information */}
         <div>
           <h3 className="font-medium text-foreground mb-4">Personal Information</h3>

@@ -103,10 +103,13 @@ const MyOrders = () => {
                     </span>
                   </td>
                   <td className="py-4 px-4 text-right">
-                    <button className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
+                    <Link 
+                      to={`/account/orders/${order.id}`}
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                    >
                       <Eye className="w-4 h-4" />
                       View
-                    </button>
+                    </Link>
                   </td>
                 </tr>
               ))}

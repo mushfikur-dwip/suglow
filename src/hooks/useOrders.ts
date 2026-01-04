@@ -16,6 +16,14 @@ export const useOrder = (id: string) => {
   });
 };
 
+export const useOrderDetails = (id: number) => {
+  return useQuery({
+    queryKey: ['order', id],
+    queryFn: () => ordersAPI.getOrderDetails(id),
+    enabled: !!id,
+  });
+};
+
 export const useCreateOrder = () => {
   const queryClient = useQueryClient();
   
