@@ -16,6 +16,12 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // If data is FormData, remove Content-Type header to let browser set it with boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
     return config;
   },
   (error) => {
@@ -136,4 +142,15 @@ export const customersAPI = {
   create: (data) => apiClient.post('/admin/customers', data),
   update: (id, data) => apiClient.put(`/admin/customers/${id}`, data),
   updateStatus: (id, status) => apiClient.put(`/admin/customers/${id}/status`, { status }),
+};
+
+export const categoriesAPI = {
+  getAll: () => apiClient.get('/categories'),
+  create: (data) => {
+    console.log('🔐 Token from localStorage:', localStorage.getItem('auth_token') ? 'EXISTS' : 'MISSING');
+    console.log('📤 Sending category data:', data);
+    return apiClient.post('/categories', data);
+  },
+  update: (id, data) => apiClient.put(`/categories/${id}`, data),
+  delete: (id) => apiClient.delete(`/categories/${id}`),
 };

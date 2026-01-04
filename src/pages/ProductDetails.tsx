@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/imageUrl";
 
 // Mock product data
 const mockProduct = {
@@ -57,8 +58,8 @@ const ProductDetails = () => {
     : [];
   
   const allImages = [
-    product?.main_image || "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?w=500",
-    ...images
+    getImageUrl(product?.main_image),
+    ...images.map((img: string) => getImageUrl(img))
   ];
 
   const handleQuantityChange = (delta: number) => {

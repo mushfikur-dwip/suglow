@@ -206,33 +206,46 @@ export const getProductBySlug = async (req, res) => {
 // Create new product (Admin only)
 export const createProduct = async (req, res) => {
   try {
+    console.log('Create product - File received:', req.file);
+    console.log('Create product - Body:', req.body);
+    
     const {
-      sku, name, slug, description, shortDescription, categoryId,
-      brand, price, salePrice, stockQuantity, mainImage, featured,
-      trending, bestSeller, newArrival
+      sku, name, slug, description, short_description, category_id,
+      brand, price, sale_price, stock_quantity, main_image_url, featured,
+      trending, best_seller, new_arrival, status
     } = req.body;
+
+    // Use uploaded file path or provided URL
+    let mainImage = main_image_url || null;
+    if (req.file) {
+      mainImage = `/images/${req.file.filename}`;
+      console.log('Image path saved:', mainImage);
+    }
 
     const [result] = await db.query(
       `INSERT INTO products 
        (sku, name, slug, description, short_description, category_id, brand, 
         price, sale_price, stock_quantity, main_image, featured, trending, 
         best_seller, new_arrival, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
-      [sku, name, slug, description, shortDescription, categoryId, brand,
-       price, salePrice, stockQuantity, mainImage, featured || false,
-       trending || false, bestSeller || false, newArrival || false]
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [sku, name, slug, description || '', short_description || '', category_id, brand || '',
+       price, sale_price || null, stock_quantity || 0, mainImage, featured === '1' || featured === true ? 1 : 0,
+       trending === '1' || trending === true ? 1 : 0, best_seller === '1' || best_seller === true ? 1 : 0, 
+       new_arrival === '1' || new_arrival === true ? 1 : 0, status || 'active']
     );
 
     res.status(201).json({
       success: true,
       message: 'Product created successfully',
-      productId: result.insertId
+      productId: result.insertId,
+      imagePath: mainImage
     });
   } catch (error) {
     console.error('Create product error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to create product' 
+      message: 'Failed to create product',
+      error: error.message
     });
   }
 };
@@ -243,12 +256,15 @@ export const updateProduct = async (req, res) => {
     const { id } = req.params;
     const {
       sku, name, slug, description, short_description, category_id, brand,
-      price, sale_price, stock_quantity, main_image, main_image_url, 
+      price, sale_price, stock_quantity, main_image_url, 
       featured, trending, best_seller, new_arrival, status
     } = req.body;
 
-    // Use main_image_url if no file uploaded
-    const imageUrl = main_image || main_image_url;
+    // Use uploaded file path or provided URL
+    let imageUrl = main_image_url;
+    if (req.file) {
+      imageUrl = `/images/${req.file.filename}`;
+    }
 
     await db.query(
       `UPDATE products SET 
@@ -257,10 +273,11 @@ export const updateProduct = async (req, res) => {
        main_image = ?, featured = ?, trending = ?, best_seller = ?,
        new_arrival = ?, status = ?
        WHERE id = ?`,
-      [sku, name, slug, description, short_description, category_id, brand, 
-       price, sale_price || null, stock_quantity, imageUrl, 
-       featured || 0, trending || 0, best_seller || 0, new_arrival || 0, 
-       status, id]
+      [sku, name, slug, description || '', short_description || '', category_id, brand || '', 
+       price, sale_price || null, stock_quantity || 0, imageUrl, 
+       featured === '1' || featured === true ? 1 : 0, trending === '1' || trending === true ? 1 : 0, 
+       best_seller === '1' || best_seller === true ? 1 : 0, new_arrival === '1' || new_arrival === true ? 1 : 0, 
+       status || 'active', id]
     );
 
     res.json({
@@ -271,7 +288,8 @@ export const updateProduct = async (req, res) => {
     console.error('Update product error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to update product' 
+      message: 'Failed to update product',
+      error: error.message
     });
   }
 };

@@ -8,11 +8,16 @@ const __dirname = path.dirname(__filename);
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../public/uploads'));
+    const uploadPath = path.join(__dirname, '../public/images');
+    console.log('📁 Upload destination:', uploadPath);
+    console.log('📎 File received:', file.originalname);
+    cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+    console.log('💾 Saving as:', filename);
+    cb(null, filename);
   }
 });
 

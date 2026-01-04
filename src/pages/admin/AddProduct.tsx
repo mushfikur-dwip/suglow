@@ -13,14 +13,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Loader2, Upload } from "lucide-react";
+import { ArrowLeft, Loader2, Upload, Plus } from "lucide-react";
 import { useCreateProduct } from "@/hooks/useProducts";
+import { useCategories, useCreateCategory } from "@/hooks/useCategories";
 import { toast } from "sonner";
 
 const AdminAddProduct = () => {
   const navigate = useNavigate();
   const createProductMutation = useCreateProduct();
+  const { data: categoriesData } = useCategories();
+  const createCategoryMutation = useCreateCategory();
 
   const [formData, setFormData] = useState({
     sku: "",
@@ -40,6 +51,17 @@ const AdminAddProduct = () => {
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [categoryDialog, setCategoryDialog] = useState(false);
+  const [newCategoryData, setNewCategoryData] = useState({
+    name: "",
+    slug: "",
+    description: "",
+  });
+
+  const categories = categoriesData?.data || [];
+  
+  console.log('📋 Categories data:', categoriesData);
+  console.log('📋 Categories array:', categories);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData({ ...formData, [field]: value });
@@ -57,7 +79,9 @@ const AdminAddProduct = () => {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
+      const file = e.target.files[0];
+      console.log('📎 Image selected:', file.name, file.size, 'bytes');
+      setImageFile(file);
     }
   };
 
@@ -70,6 +94,8 @@ const AdminAddProduct = () => {
       return;
     }
 
+    console.log('🖼️ Image file before submit:', imageFile);
+
     const submitData = new FormData();
     submitData.append("sku", formData.sku);
     submitData.append("name", formData.name);
@@ -79,17 +105,23 @@ const AdminAddProduct = () => {
     submitData.append("category_id", formData.category_id);
     submitData.append("brand", formData.brand);
     submitData.append("price", formData.price);
-    if (formData.sale_price) submitData.append("sale_price", formData.sale_price);
+    submitData.append("sale_price", formData.sale_price);
     submitData.append("stock_quantity", formData.stock_quantity);
     submitData.append("featured", formData.featured ? "1" : "0");
     submitData.append("trending", formData.trending ? "1" : "0");
     submitData.append("status", formData.status);
     
     if (imageFile) {
+      console.log('✅ Appending image to FormData:', imageFile.name);
       submitData.append("main_image", imageFile);
     } else if (formData.main_image) {
+      console.log('🔗 Using image URL:', formData.main_image);
       submitData.append("main_image_url", formData.main_image);
+    } else {
+      console.log('⚠️ No image provided');
     }
+
+    console.log('📤 Submitting FormData...');
 
     createProductMutation.mutate(submitData, {
       onSuccess: () => {
@@ -97,7 +129,32 @@ const AdminAddProduct = () => {
         navigate("/admin/products");
       },
       onError: (error: any) => {
-        toast.error(error.message || "Failed to create product");
+        toast.error(error.response?.data?.message || "Failed to create product");
+      },
+    });
+  };
+
+  const handleAddCategory = () => {
+    console.log('🏷️ Creating category with data:', newCategoryData);
+    
+    if (!newCategoryData.name) {
+      toast.error("Category name is required");
+      return;
+    }
+
+    console.log('📨 Sending category request to backend...');
+    createCategoryMutation.mutate(newCategoryData, {
+      onSuccess: (response: any) => {
+        console.log('✅ Category created successfully:', response);
+        toast.success("Category created successfully");
+        setFormData({ ...formData, category_id: response.data.id.toString() });
+        setCategoryDialog(false);
+        setNewCategoryData({ name: "", slug: "", description: "" });
+      },
+      onError: (error: any) => {
+        console.log('❌ Category creation failed:', error);
+        console.log('❌ Error response:', error.response);
+        toast.error(error.response?.data?.message || "Failed to create category");
       },
     });
   };
@@ -239,8 +296,17 @@ const AdminAddProduct = () => {
             {/* Sidebar */}
             <div className="space-y-6">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Category</CardTitle>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCategoryDialog(true)}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <Select
@@ -251,12 +317,11 @@ const AdminAddProduct = () => {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent className="bg-background">
-                      <SelectItem value="1">Skincare</SelectItem>
-                      <SelectItem value="2">Haircare</SelectItem>
-                      <SelectItem value="3">Makeup</SelectItem>
-                      <SelectItem value="4">Fragrance</SelectItem>
-                      <SelectItem value="5">Body Care</SelectItem>
-                      <SelectItem value="6">Men</SelectItem>
+                      {categories.map((category: any) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </CardContent>
@@ -360,6 +425,84 @@ const AdminAddProduct = () => {
             </div>
           </div>
         </form>
+
+        {/* Add Category Dialog */}
+        <Dialog open={categoryDialog} onOpenChange={setCategoryDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Category</DialogTitle>
+              <DialogDescription>
+                Create a new product category
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="category_name">
+                  Category Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="category_name"
+                  value={newCategoryData.name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                    console.log('📝 Category name changed:', name, '→ slug:', slug);
+                    setNewCategoryData({ ...newCategoryData, name, slug });
+                  }}
+                  placeholder="e.g., Skincare"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category_slug">Slug</Label>
+                <Input
+                  id="category_slug"
+                  value={newCategoryData.slug}
+                  onChange={(e) =>
+                    setNewCategoryData({ ...newCategoryData, slug: e.target.value })
+                  }
+                  placeholder="e.g., skincare"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category_description">Description</Label>
+                <Textarea
+                  id="category_description"
+                  value={newCategoryData.description}
+                  onChange={(e) =>
+                    setNewCategoryData({ ...newCategoryData, description: e.target.value })
+                  }
+                  placeholder="Category description (optional)"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCategoryDialog(false);
+                  setNewCategoryData({ name: "", slug: "", description: "" });
+                }}
+                disabled={createCategoryMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddCategory}
+                disabled={createCategoryMutation.isPending}
+              >
+                {createCategoryMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Category"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

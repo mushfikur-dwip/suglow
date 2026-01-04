@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAddToCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/imageUrl";
 
 interface ProductCardProps {
   id: number;
@@ -75,7 +76,7 @@ const ProductCard = ({
         {/* Product Image */}
         <div className="aspect-square overflow-hidden bg-secondary/30 p-4">
           <img
-            src={image}
+            src={getImageUrl(image)}
             alt={name}
             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
           />
