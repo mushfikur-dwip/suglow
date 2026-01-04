@@ -353,23 +353,30 @@ export const updateOrderStatus = async (req, res) => {
 // Get all orders (Admin only)
 export const getAllOrders = async (req, res) => {
   try {
-    const { status, page = 1, limit = 20 } = req.query;
+    const { status, search, page = 1, limit = 20 } = req.query;
 
     let query = `
       SELECT o.*, 
+      CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as customer_name,
       u.email as customer_email,
-      u.first_name as customer_first_name,
+      u.phone as customer_phone,
       COUNT(oi.id) as item_count
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
       LEFT JOIN order_items oi ON o.id = oi.order_id
+      WHERE 1=1
     `;
 
     const params = [];
 
-    if (status) {
-      query += ' WHERE o.status = ?';
+    if (status && status !== 'all') {
+      query += ' AND o.status = ?';
       params.push(status);
+    }
+
+    if (search) {
+      query += ' AND (o.order_number LIKE ? OR u.email LIKE ? OR CONCAT(u.first_name, " ", u.last_name) LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     query += ' GROUP BY o.id ORDER BY o.created_at DESC';
@@ -380,15 +387,147 @@ export const getAllOrders = async (req, res) => {
 
     const [orders] = await db.query(query, params);
 
+    // Get total count
+    let countQuery = 'SELECT COUNT(*) as total FROM orders o WHERE 1=1';
+    const countParams = [];
+
+    if (status && status !== 'all') {
+      countQuery += ' AND o.status = ?';
+      countParams.push(status);
+    }
+
+    if (search) {
+      countQuery += ` AND EXISTS (
+        SELECT 1 FROM users u WHERE u.id = o.user_id AND 
+        (o.order_number LIKE ? OR u.email LIKE ? OR CONCAT(u.first_name, " ", u.last_name) LIKE ?)
+      )`;
+      countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    const [[{ total }]] = await db.query(countQuery, countParams);
+
     res.json({
       success: true,
-      data: orders
+      data: orders,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
     console.error('Get all orders error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch orders' 
+    });
+  }
+};
+
+// Get admin order details
+export const getAdminOrderDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [orders] = await db.query(
+      `SELECT o.*, 
+       CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as customer_name,
+       u.email as customer_email,
+       u.phone as customer_phone,
+       sa.first_name as shipping_first_name, sa.last_name as shipping_last_name,
+       sa.email as shipping_email, sa.phone as shipping_phone, 
+       sa.address_line1 as shipping_address_line1,
+       sa.address_line2 as shipping_address_line2, sa.city as shipping_city,
+       sa.state as shipping_state, sa.postal_code as shipping_postal_code,
+       sa.country as shipping_country
+       FROM orders o
+       LEFT JOIN users u ON o.user_id = u.id
+       LEFT JOIN addresses sa ON o.shipping_address_id = sa.id
+       WHERE o.id = ?`,
+      [id]
+    );
+
+    if (orders.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Order not found' 
+      });
+    }
+
+    const [items] = await db.query(
+      `SELECT oi.*, p.main_image, p.slug, p.name as product_name
+       FROM order_items oi
+       LEFT JOIN products p ON oi.product_id = p.id
+       WHERE oi.order_id = ?`,
+      [id]
+    );
+
+    const order = orders[0];
+
+    res.json({
+      success: true,
+      data: {
+        ...order,
+        shipping_address: {
+          first_name: order.shipping_first_name,
+          last_name: order.shipping_last_name,
+          email: order.shipping_email,
+          phone: order.shipping_phone,
+          address_line1: order.shipping_address_line1,
+          address_line2: order.shipping_address_line2,
+          city: order.shipping_city,
+          state: order.shipping_state,
+          postal_code: order.shipping_postal_code,
+          country: order.shipping_country,
+        },
+        items
+      }
+    });
+  } catch (error) {
+    console.error('Get admin order details error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch order details' 
+    });
+  }
+};
+
+// Get order statistics
+export const getOrderStats = async (req, res) => {
+  try {
+    const [stats] = await db.query(`
+      SELECT 
+        COUNT(*) as total_orders,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+        SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing_orders,
+        SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
+        SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
+        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders,
+        SUM(total_amount) as total_revenue
+      FROM orders
+    `);
+
+    // Get today's orders
+    const [[todayStats]] = await db.query(`
+      SELECT COUNT(*) as today_orders, SUM(total_amount) as today_revenue
+      FROM orders
+      WHERE DATE(created_at) = CURDATE()
+    `);
+
+    res.json({
+      success: true,
+      data: {
+        ...stats[0],
+        today_orders: todayStats.today_orders || 0,
+        today_revenue: todayStats.today_revenue || 0
+      }
+    });
+  } catch (error) {
+    console.error('Get order stats error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch order statistics' 
     });
   }
 };

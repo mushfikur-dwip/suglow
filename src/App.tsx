@@ -39,12 +39,14 @@ import AdminCustomers from "./pages/admin/Customers";
 import AdminCoupons from "./pages/admin/Coupons";
 import AdminStock from "./pages/admin/Stock";
 import AdminSettings from "./pages/admin/Settings";
-import AdminPOS from "./pages/admin/POS";
+// import AdminPOS from "./pages/admin/POS"; // Commented out temporarily
 import AdminReviews from "./pages/admin/Reviews";
 import AdminPromotions from "./pages/admin/Promotions";
 import AdminPurchase from "./pages/admin/Purchase";
 import NewPurchaseOrder from "./pages/admin/NewPurchaseOrder";
 import AdminDamages from "./pages/admin/Damages";
+import AdminReturnAndRefunds from "./pages/admin/ReturnAndRefunds";
+import AdminReturnOrders from "./pages/admin/ReturnOrders";
 
 const queryClient = new QueryClient();
 
@@ -86,17 +88,19 @@ const App = () => (
             <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProducts /></ProtectedAdminRoute>} />
             <Route path="/admin/products/add" element={<ProtectedAdminRoute><AdminAddProduct /></ProtectedAdminRoute>} />
             <Route path="/admin/products/edit/:id" element={<ProtectedAdminRoute><AdminEditProduct /></ProtectedAdminRoute>} />
-            <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOnlineOrders /></ProtectedAdminRoute>} />
+            <Route path="/admin/online-orders" element={<ProtectedAdminRoute><AdminOnlineOrders /></ProtectedAdminRoute>} />
             <Route path="/admin/customers" element={<ProtectedAdminRoute><AdminCustomers /></ProtectedAdminRoute>} />
             <Route path="/admin/coupons" element={<ProtectedAdminRoute><AdminCoupons /></ProtectedAdminRoute>} />
             <Route path="/admin/stock" element={<ProtectedAdminRoute><AdminStock /></ProtectedAdminRoute>} />
             <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
-            <Route path="/admin/pos" element={<ProtectedAdminRoute><AdminPOS /></ProtectedAdminRoute>} />
+            {/* <Route path="/admin/pos" element={<ProtectedAdminRoute><AdminPOS /></ProtectedAdminRoute>} /> */}
             <Route path="/admin/reviews" element={<ProtectedAdminRoute><AdminReviews /></ProtectedAdminRoute>} />
             <Route path="/admin/promotions" element={<ProtectedAdminRoute><AdminPromotions /></ProtectedAdminRoute>} />
             <Route path="/admin/purchase" element={<ProtectedAdminRoute><AdminPurchase /></ProtectedAdminRoute>} />
             <Route path="/admin/purchase/new" element={<ProtectedAdminRoute><NewPurchaseOrder /></ProtectedAdminRoute>} />
             <Route path="/admin/damages" element={<ProtectedAdminRoute><AdminDamages /></ProtectedAdminRoute>} />
+            <Route path="/admin/return-orders" element={<ProtectedAdminRoute><AdminReturnOrders /></ProtectedAdminRoute>} />
+            <Route path="/admin/refunds" element={<ProtectedAdminRoute><AdminReturnAndRefunds /></ProtectedAdminRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -48,15 +48,15 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    title: "POS & ORDERS",
+    title: "ORDERS",
     items: [
-      { icon: Monitor, label: "POS", path: "/admin/pos" },
+      // { icon: Monitor, label: "POS", path: "/admin/pos" }, // Commented out temporarily
       { 
         icon: ClipboardList, 
         label: "Order Management",
         children: [
           { label: "Online Orders", path: "/admin/online-orders" },
-          { label: "POS Orders", path: "/admin/pos-orders" },
+          // { label: "POS Orders", path: "/admin/pos-orders" }, // Commented out temporarily
           { label: "Return Orders", path: "/admin/return-orders" },
           { label: "Return And Refunds", path: "/admin/refunds" },
         ],

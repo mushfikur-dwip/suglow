@@ -19,6 +19,7 @@ import notificationRoutes from './routes/notifications.js';
 import purchaseRoutes from './routes/purchase.js';
 import stockRoutes from './routes/stock.js';
 import reviewRoutes from './routes/reviews.js';
+import returnRoutes from './routes/returns.js';
 
 // Import middleware
 import { errorHandler, notFound } from './middleware/errorHandler.js';
@@ -66,6 +67,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/purchase', purchaseRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/returns', returnRoutes);
 
 // Error handling
 app.use(notFound);

@@ -19,7 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Eye, Package, DollarSign, ShoppingCart, TrendingUp, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,57 +26,41 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Search, Eye, Package, RotateCcw, Clock, Loader2 } from "lucide-react";
 import AdminStatCard from "@/components/admin/AdminStatCard";
-import { useAllOrders, useOrderStats, useUpdateOrderStatus, useAdminOrderDetails } from "@/hooks/useOrders";
-import { toast } from "sonner";
+import { useReturns, useReturnStats } from "@/hooks/useReturns";
+import { useAdminOrderDetails } from "@/hooks/useOrders";
 import { format } from "date-fns";
 
-const getStatusBadge = (status: string) => {
+const getPaymentStatusBadge = (status: string) => {
   const styles: Record<string, string> = {
     pending: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100",
-    processing: "bg-blue-100 text-blue-700 hover:bg-blue-100",
-    shipped: "bg-purple-100 text-purple-700 hover:bg-purple-100",
-    delivered: "bg-green-100 text-green-700 hover:bg-green-100",
-    cancelled: "bg-red-100 text-red-700 hover:bg-red-100",
-    returned: "bg-orange-100 text-orange-700 hover:bg-orange-100",
+    paid: "bg-green-100 text-green-700 hover:bg-green-100",
+    refunded: "bg-blue-100 text-blue-700 hover:bg-blue-100",
+    failed: "bg-red-100 text-red-700 hover:bg-red-100",
   };
   return styles[status] || "";
 };
 
-const AdminOnlineOrders = () => {
+const AdminReturnOrders = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedReturn, setSelectedReturn] = useState<any>(null);
   const [viewDialog, setViewDialog] = useState(false);
-  
-  const { data: ordersData, isLoading } = useAllOrders({
+
+  const { data: returnsData, isLoading } = useReturns({
     search: searchQuery,
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
-  
-  const { data: statsData } = useOrderStats();
-  const updateStatusMutation = useUpdateOrderStatus();
-  const { data: orderDetailsData } = useAdminOrderDetails(selectedOrder?.id);
 
-  const orders = ordersData?.data || [];
+  const { data: statsData } = useReturnStats();
+  const { data: orderDetailsData } = useAdminOrderDetails(selectedReturn?.id);
+
+  const returns = returnsData?.data || [];
   const stats = statsData?.data || {};
 
-  const handleStatusChange = (orderId: number, newStatus: string) => {
-    updateStatusMutation.mutate(
-      { id: orderId, status: newStatus },
-      {
-        onSuccess: () => {
-          toast.success("Order status updated successfully");
-        },
-        onError: (error: any) => {
-          toast.error(error.message || "Failed to update order status");
-        },
-      }
-    );
-  };
-
-  const handleViewOrder = (order: any) => {
-    setSelectedOrder(order);
+  const handleViewOrder = (returnOrder: any) => {
+    setSelectedReturn(returnOrder);
     setViewDialog(true);
   };
 
@@ -94,79 +77,78 @@ const AdminOnlineOrders = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Online Orders</h1>
-            <p className="text-muted-foreground">Manage customer orders from online store</p>
+            <h1 className="text-2xl font-bold text-foreground">Return Orders</h1>
+            <p className="text-muted-foreground">View and manage product return requests</p>
           </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <AdminStatCard
-            title="Total Orders"
-            value={stats.total_orders || 0}
-            icon={ShoppingCart}
+            title="Total Returns"
+            value={stats.total_returns || 0}
+            icon={RotateCcw}
             change=""
             changeType="neutral"
           />
           <AdminStatCard
-            title="Pending"
-            value={stats.pending_orders || 0}
-            icon={Package}
+            title="Pending Refunds"
+            value={stats.pending_refunds || 0}
+            icon={Clock}
             change=""
             changeType="warning"
           />
           <AdminStatCard
-            title="Delivered"
-            value={stats.delivered_orders || 0}
+            title="This Month"
+            value={stats.this_month_returns || 0}
             icon={Package}
             change=""
-            changeType="positive"
+            changeType="neutral"
           />
           <AdminStatCard
-            title="Total Revenue"
-            value={formatCurrency(stats.total_revenue || 0)}
-            icon={DollarSign}
+            title="Total Value"
+            value={formatCurrency(stats.total_refunded_amount)}
+            icon={Package}
             change=""
-            changeType="positive"
+            changeType="neutral"
           />
         </div>
 
+        {/* Filters */}
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search orders..." 
-                  className="pl-9" 
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search by order number, customer name or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Status" />
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Payment Status" />
                 </SelectTrigger>
-                <SelectContent className="bg-background">
+                <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
-                  <SelectItem value="shipped">Shipped</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="pending">Pending Refund</SelectItem>
+                  <SelectItem value="refunded">Refunded</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </CardHeader>
+
           <CardContent>
             {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            ) : orders.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No orders found</p>
+            ) : returns.length === 0 ? (
+              <div className="text-center py-8">
+                <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No return orders found</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -175,64 +157,38 @@ const AdminOnlineOrders = () => {
                     <TableRow>
                       <TableHead>Order ID</TableHead>
                       <TableHead>Customer</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Return Date</TableHead>
                       <TableHead>Items</TableHead>
                       <TableHead>Amount</TableHead>
-                      <TableHead>Payment</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Payment Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {orders.map((order: any) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">
-                          #{order.order_number || order.id}
-                        </TableCell>
+                    {returns.map((returnOrder: any) => (
+                      <TableRow key={returnOrder.id}>
+                        <TableCell className="font-medium">#{returnOrder.order_number}</TableCell>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-medium">{order.customer_name || "Guest"}</span>
-                            <span className="text-xs text-muted-foreground">{order.customer_email || order.guest_email}</span>
+                            <span className="font-medium">{returnOrder.customer_name || "Guest"}</span>
+                            <span className="text-sm text-muted-foreground">{returnOrder.customer_email || returnOrder.guest_email}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm">
-                          {format(new Date(order.created_at), "MMM dd, yyyy")}
-                        </TableCell>
-                        <TableCell>{order.item_count || 0}</TableCell>
-                        <TableCell className="font-semibold">
-                          {formatCurrency(order.total_amount)}
-                        </TableCell>
-                        <TableCell className="capitalize text-sm">
-                          {order.payment_method}
-                        </TableCell>
+                        <TableCell>{format(new Date(returnOrder.updated_at), "MMM dd, yyyy")}</TableCell>
+                        <TableCell>{returnOrder.item_count} items</TableCell>
+                        <TableCell className="font-semibold">{formatCurrency(parseFloat(returnOrder.total_amount))}</TableCell>
                         <TableCell>
-                          <Select
-                            value={order.status}
-                            onValueChange={(value) => handleStatusChange(order.id, value)}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            <SelectTrigger className="w-32">
-                              <Badge className={getStatusBadge(order.status)}>
-                                {order.status}
-                              </Badge>
-                            </SelectTrigger>
-                            <SelectContent className="bg-background">
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="processing">Processing</SelectItem>
-                              <SelectItem value="shipped">Shipped</SelectItem>
-                              <SelectItem value="delivered">Delivered</SelectItem>
-                              <SelectItem value="returned">Returned</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Badge className={getPaymentStatusBadge(returnOrder.payment_status)} variant="secondary">
+                            {returnOrder.payment_status}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleViewOrder(order)}
+                            onClick={() => handleViewOrder(returnOrder)}
                           >
-                            <Eye className="w-4 h-4 mr-1" />
+                            <Eye className="h-4 w-4 mr-1" />
                             View
                           </Button>
                         </TableCell>
@@ -249,12 +205,12 @@ const AdminOnlineOrders = () => {
         <Dialog open={viewDialog} onOpenChange={setViewDialog}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Order Details #{selectedOrder?.order_number || selectedOrder?.id}</DialogTitle>
+              <DialogTitle>Return Order Details #{selectedReturn?.order_number || selectedReturn?.id}</DialogTitle>
               <DialogDescription>
-                Complete order information including customer details, shipping address, and order items
+                View complete information about this returned order
               </DialogDescription>
             </DialogHeader>
-            {selectedOrder && orderDetailsData?.data && (
+            {selectedReturn && orderDetailsData?.data && (
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -277,6 +233,12 @@ const AdminOnlineOrders = () => {
                     <p className="text-sm text-muted-foreground">Payment Method</p>
                     <p className="font-medium capitalize">{orderDetailsData.data.payment_method}</p>
                   </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Payment Status</p>
+                    <Badge className={getPaymentStatusBadge(orderDetailsData.data.payment_status)}>
+                      {orderDetailsData.data.payment_status}
+                    </Badge>
+                  </div>
                 </div>
 
                 {orderDetailsData.data.shipping_address && (
@@ -294,7 +256,7 @@ const AdminOnlineOrders = () => {
                 )}
 
                 <div>
-                  <p className="text-sm font-semibold mb-3">Order Items</p>
+                  <p className="text-sm font-semibold mb-3">Returned Items</p>
                   <div className="border rounded-lg divide-y">
                     {orderDetailsData.data?.items?.map((item: any, index: number) => (
                       <div key={index} className="flex justify-between items-center p-3">
@@ -326,7 +288,7 @@ const AdminOnlineOrders = () => {
                     <span>{formatCurrency(parseFloat(orderDetailsData.data.shipping_cost))}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold border-t pt-2">
-                    <span>Total</span>
+                    <span>Total Amount</span>
                     <span>{formatCurrency(parseFloat(orderDetailsData.data.total_amount))}</span>
                   </div>
                 </div>
@@ -339,4 +301,4 @@ const AdminOnlineOrders = () => {
   );
 };
 
-export default AdminOnlineOrders;
+export default AdminReturnOrders;

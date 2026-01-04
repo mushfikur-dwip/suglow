@@ -73,8 +73,8 @@ export const ordersAPI = {
   create: (data) => apiClient.post('/orders', data),
   getOrders: () => apiClient.get('/orders'),
   getOrderDetails: (id) => apiClient.get(`/orders/${id}`),
-  getAllOrders: (params) => apiClient.get('/orders/all', { params }),
-  updateStatus: (id, data) => apiClient.put(`/orders/${id}/status`, data),
+  getAllOrders: (params) => apiClient.get('/orders/admin/all', { params }),
+  getOrderStats: () => apiClient.get('/orders/admin/stats'),  getAdminOrderDetails: (id: number) => apiClient.get(`/orders/admin/${id}`),  updateStatus: (id, data) => apiClient.put(`/orders/${id}/status`, data),
 };
 
 export const adminAPI = {
@@ -120,4 +120,11 @@ export const reviewsAPI = {
   updateStatus: (id, status) => apiClient.put(`/reviews/${id}/status`, { status }),
   delete: (id) => apiClient.delete(`/reviews/${id}`),
   bulkUpdateStatus: (review_ids, status) => apiClient.put('/reviews/bulk/status', { review_ids, status }),
+};
+
+export const returnsAPI = {
+  getAll: (params) => apiClient.get('/returns', { params }),
+  getStats: () => apiClient.get('/returns/stats'),
+  processRefund: (id) => apiClient.put(`/returns/${id}/refund`),
+  cancelRefund: (id) => apiClient.put(`/returns/${id}/cancel`),
 };

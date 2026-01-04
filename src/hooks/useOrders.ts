@@ -24,6 +24,14 @@ export const useOrderDetails = (id: number) => {
   });
 };
 
+export const useAdminOrderDetails = (id: number | null) => {
+  return useQuery({
+    queryKey: ['admin-order', id],
+    queryFn: () => ordersAPI.getAdminOrderDetails(id!),
+    enabled: !!id,
+  });
+};
+
 export const useCreateOrder = () => {
   const queryClient = useQueryClient();
   
@@ -43,6 +51,13 @@ export const useAllOrders = (params?: Record<string, string | number>) => {
   });
 };
 
+export const useOrderStats = () => {
+  return useQuery({
+    queryKey: ['order-stats'],
+    queryFn: () => ordersAPI.getOrderStats(),
+  });
+};
+
 export const useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
   
@@ -52,6 +67,7 @@ export const useUpdateOrderStatus = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['order-stats'] });
     },
   });
 };
