@@ -52,24 +52,32 @@ const AdminDashboard = () => {
     );
   }
 
-  // Prepare sales data from stats if available
-  const salesData = stats?.monthly_sales || [
-    { name: "Jan", sales: 0 },
-    { name: "Feb", sales: 0 },
-    { name: "Mar", sales: 0 },
-    { name: "Apr", sales: 0 },
-    { name: "May", sales: 0 },
-    { name: "Jun", sales: 0 },
-    { name: "Jul", sales: 0 },
+  // Prepare sales data from backend
+  const salesByDay = stats?.data?.salesByDay || [];
+  const salesData = salesByDay.map((day: any) => ({
+    name: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    sales: parseFloat(day.revenue) || 0
+  }));
+
+  // Calculate order status counts
+  const orderStatusCounts: Record<string, number> = {};
+  (stats?.data?.orderStatusCount || []).forEach((item: any) => {
+    orderStatusCounts[item.status] = parseInt(item.count);
+  });
+
+  const totalOrdersCount = Object.values(orderStatusCounts).reduce((a: any, b: any) => a + b, 0);
+
+  // Prepare order summary data for pie chart
+  const orderSummaryData = [
+    { name: "Delivered", value: orderStatusCounts.delivered || 0, color: "#22c55e" },
+    { name: "Cancelled", value: orderStatusCounts.cancelled || 0, color: "#ef4444" },
+    { name: "Pending", value: orderStatusCounts.pending || 0, color: "#f59e0b" },
+    { name: "Processing", value: orderStatusCounts.processing || 0, color: "#3b82f6" },
   ];
 
-  // Prepare order summary data
-  const orderSummaryData = [
-    { name: "Delivered", value: stats?.order_stats?.delivered || 0, color: "#22c55e" },
-    { name: "Cancelled", value: stats?.order_stats?.cancelled || 0, color: "#ef4444" },
-    { name: "Pending", value: stats?.order_stats?.pending || 0, color: "#f59e0b" },
-    { name: "Processing", value: stats?.order_stats?.processing || 0, color: "#8b5cf6" },
-  ];
+  // Calculate total sales and average
+  const totalSales = salesData.reduce((sum: number, day: any) => sum + day.sales, 0);
+  const avgSalesPerDay = salesData.length > 0 ? totalSales / salesData.length : 0;
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -82,25 +90,25 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <AdminStatCard
             title="Total Earnings"
-            value={`৳${stats?.total_revenue?.toLocaleString() || '0.00'}`}
+            value={`৳${(stats?.data?.stats?.totalRevenue || 0).toLocaleString()}`}
             icon={DollarSign}
             variant="pink"
           />
           <AdminStatCard
             title="Total Orders"
-            value={stats?.total_orders?.toString() || "0"}
+            value={stats?.data?.stats?.totalOrders?.toString() || "0"}
             icon={ShoppingBag}
             variant="orange"
           />
           <AdminStatCard
             title="Total Customers"
-            value={stats?.total_customers?.toString() || "0"}
+            value={stats?.data?.stats?.totalCustomers?.toString() || "0"}
             icon={Users}
             variant="purple"
           />
           <AdminStatCard
             title="Total Products"
-            value={stats?.total_products?.toString() || "0"}
+            value={stats?.data?.stats?.totalProducts?.toString() || "0"}
             icon={Package}
             variant="red"
           />
@@ -126,56 +134,56 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <OrderStatItem
                 title="Total Orders"
-                value={stats?.total_orders?.toString() || "0"}
+                value={stats?.data?.stats?.totalOrders?.toString() || "0"}
                 icon={ShoppingBag}
                 iconBgColor="bg-pink-100"
                 iconColor="text-primary"
               />
               <OrderStatItem
                 title="Pending"
-                value={stats?.order_stats?.pending?.toString() || "0"}
+                value={orderStatusCounts.pending?.toString() || "0"}
                 icon={Clock}
                 iconBgColor="bg-orange-100"
                 iconColor="text-orange-500"
               />
               <OrderStatItem
                 title="Processing"
-                value={stats?.order_stats?.processing?.toString() || "0"}
+                value={orderStatusCounts.processing?.toString() || "0"}
                 icon={CheckCircle}
                 iconBgColor="bg-green-100"
                 iconColor="text-green-500"
               />
               <OrderStatItem
                 title="Shipped"
-                value={stats?.order_stats?.shipped?.toString() || "0"}
+                value={orderStatusCounts.shipped?.toString() || "0"}
                 icon={TrendingUp}
                 iconBgColor="bg-blue-100"
                 iconColor="text-blue-500"
               />
               <OrderStatItem
                 title="Delivered"
-                value={stats?.order_stats?.delivered?.toString() || "0"}
+                value={orderStatusCounts.delivered?.toString() || "0"}
                 icon={Truck}
                 iconBgColor="bg-cyan-100"
                 iconColor="text-cyan-500"
               />
               <OrderStatItem
                 title="Cancelled"
-                value={stats?.order_stats?.cancelled?.toString() || "0"}
+                value={orderStatusCounts.cancelled?.toString() || "0"}
                 icon={XCircle}
                 iconBgColor="bg-red-100"
                 iconColor="text-red-500"
               />
               <OrderStatItem
                 title="Returned"
-                value={stats?.order_stats?.returned?.toString() || "0"}
+                value={orderStatusCounts.returned?.toString() || "0"}
                 icon={RotateCcw}
                 iconBgColor="bg-purple-100"
                 iconColor="text-purple-500"
               />
               <OrderStatItem
                 title="Rejected"
-                value={stats?.order_stats?.rejected?.toString() || "0"}
+                value={orderStatusCounts.rejected?.toString() || "0"}
                 icon={Ban}
                 iconBgColor="bg-rose-100"
                 iconColor="text-rose-500"
@@ -199,14 +207,14 @@ const AdminDashboard = () => {
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-muted-foreground" />
                   <div>
-                    <p className="text-xl font-bold">৳0.00</p>
-                    <p className="text-xs text-muted-foreground">Total Sales</p>
+                    <p className="text-xl font-bold">৳{totalSales.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Total Sales (Last 7 Days)</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-muted-foreground" />
                   <div>
-                    <p className="text-xl font-bold">৳0.00</p>
+                    <p className="text-xl font-bold">৳{avgSalesPerDay.toFixed(2)}</p>
                     <p className="text-xs text-muted-foreground">Avg Sales Per Day</p>
                   </div>
                 </div>
@@ -275,7 +283,7 @@ const AdminDashboard = () => {
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <p className="text-sm text-muted-foreground">Total</p>
-                    <p className="text-2xl font-bold">0</p>
+                    <p className="text-2xl font-bold">{totalOrdersCount}</p>
                   </div>
                 </div>
                 <div className="ml-6 space-y-3">
@@ -318,11 +326,54 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                      No orders found
-                    </td>
-                  </tr>
+                  {(stats?.data?.recentOrders || []).length > 0 ? (
+                    stats.data.recentOrders.map((order: any) => (
+                      <tr key={order.id} className="border-b border-border hover:bg-muted/50">
+                        <td className="py-3 px-4 text-sm font-medium">#{order.order_number}</td>
+                        <td className="py-3 px-4 text-sm">
+                          {order.first_name} {order.last_name}
+                          <br />
+                          <span className="text-xs text-muted-foreground">{order.email || order.guest_email}</span>
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {new Date(order.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium">৳{order.total_amount}</td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              order.status === 'delivered'
+                                ? 'bg-green-100 text-green-800'
+                                : order.status === 'cancelled'
+                                ? 'bg-red-100 text-red-800'
+                                : order.status === 'processing'
+                                ? 'bg-blue-100 text-blue-800'
+                                : order.status === 'shipped'
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}
+                          >
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <Button variant="ghost" size="sm">
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                        No orders found
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
